@@ -1,5 +1,5 @@
 <?php
-// File: pages/categories.php
+// File: pages/categories.phpppp
 $pageTitle = 'Semua Kategori';
 require_once __DIR__ . '/../includes/functions.php';
 
