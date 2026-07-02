@@ -38,9 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk | <?= APP_NAME ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1.2.1">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="<?= APP_URL ?>/assets/js/main.js" defer></script>
+    <script src="<?= APP_URL ?>/assets/js/main.js?v=1.2.1" defer></script>
 </head>
 <body>
 <div class="auth-page">

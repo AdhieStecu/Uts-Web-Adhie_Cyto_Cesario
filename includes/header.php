@@ -14,7 +14,13 @@ $categories = db()->fetchAll("SELECT * FROM categories WHERE is_active = 1 ORDER
     <meta name="description" content="<?= isset($pageDesc) ? $pageDesc : 'Marketplace game terpercaya di Indonesia' ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1.2.1">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <link rel="icon" href="<?= APP_URL ?>/assets/img/favicon.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -52,15 +58,27 @@ $categories = db()->fetchAll("SELECT * FROM categories WHERE is_active = 1 ORDER
             <span class="logo-text">BoloTopup<span class="logo-dot">.ID</span></span>
         </a>
 
-        <!-- SEARCH BAR -->
-        <form class="search-bar" action="<?= APP_URL ?>/pages/search.php" method="GET">
-            <input type="text" name="q" placeholder="Cari Game, Diamond, Item, Voucher..." 
-                   value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>">
-            <button type="submit">🔍 Cari</button>
-        </form>
+        <!-- SEARCH WRAPPER (Itemku Style) -->
+        <div style="flex: 1; display: flex; flex-direction: column; max-width: 600px; margin: 0 20px;">
+            <form class="search-bar" action="<?= APP_URL ?>/pages/search.php" method="GET" style="margin-bottom: 6px; width: 100%;">
+                <input type="text" name="q" placeholder="Cari Game, Diamond, Hero..." 
+                       value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>">
+                <button type="submit">Cari</button>
+            </form>
+            <div class="search-tags" style="display: flex; gap: 8px; font-size: 11px; flex-wrap: wrap;">
+                <a href="<?= APP_URL ?>/pages/search.php?q=Robux" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-weight: 600; text-decoration: none;">Robux 5 Hari</a>
+                <a href="<?= APP_URL ?>/pages/search.php?q=plants" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-weight: 600; text-decoration: none;">plants vs brainrots</a>
+                <a href="<?= APP_URL ?>/pages/search.php?q=Blox+Fruit" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-weight: 600; text-decoration: none;">Akun Blox Fruit</a>
+                <a href="<?= APP_URL ?>/pages/search.php?q=Mobile+Legends" style="color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.12); padding: 2px 8px; border-radius: 4px; font-weight: 600; text-decoration: none;">MLBB</a>
+            </div>
+        </div>
 
         <!-- HEADER ACTIONS -->
         <div class="header-actions">
+            <!-- Theme Toggle Switch -->
+            <button id="themeToggleBtn" class="action-btn" title="Ganti Tema" style="border-radius:50%; font-size: 16px; cursor: pointer;">
+                🌙
+            </button>
             <?php if (isLoggedIn()): ?>
                 <a href="<?= APP_URL ?>/pages/notifications.php" class="action-btn" title="Notifikasi">
                     🔔

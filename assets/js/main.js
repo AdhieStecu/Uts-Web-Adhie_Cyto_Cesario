@@ -1,6 +1,28 @@
 // File: assets/js/main.js
+// Immediate theme detection to prevent flash
+(function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+
 // Auto-hide flash messages after 4 detik
 document.addEventListener('DOMContentLoaded', function () {
+    // Theme toggle switch logic
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+        let currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        themeToggleBtn.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+
+        themeToggleBtn.addEventListener('click', function () {
+            let theme = document.documentElement.getAttribute('data-theme') || 'light';
+            let newTheme = theme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    }
+
     const flash = document.querySelector('.flash-message');
     if (flash) {
         setTimeout(() => {

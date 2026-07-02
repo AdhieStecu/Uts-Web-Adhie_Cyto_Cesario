@@ -63,6 +63,6 @@
     </div>
 </footer>
 
-<script src="<?= APP_URL ?>/assets/js/main.js"></script>
+<script src="<?= APP_URL ?>/assets/js/main.js?v=1.2.1"></script>
 </body>
 </html>
