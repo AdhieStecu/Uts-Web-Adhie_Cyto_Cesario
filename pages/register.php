@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="auth-page">
     <div class="auth-box" style="max-width:480px;">
         <div style="text-align:center;margin-bottom:24px;">
-            <a href="<?= APP_URL ?>" style="font-family:var(--font-head);font-size:26px;font-weight:900;color:white;">
+            <a href="<?= APP_URL ?>" style="font-family:var(--font-head);font-size:26px;font-weight:900;color:var(--text-primary);">
                 ⚡ BoloTopup<span style="color:var(--accent)">.ID</span>
             </a>
         </div>

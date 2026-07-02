@@ -1,0 +1,19 @@
+# Environment configuration
+.env
+
+# Dependencies
+/vendor/
+
+# OS-generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE and Editor configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

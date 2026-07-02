@@ -451,3 +451,55 @@ function paginate($total, $perPage, $currentPage, $url) {
     $html .= '</div>';
     return $html;
 }
+
+// ---- EMAIL SENDER (SMTP) ----
+
+function sendEmail($to, $subject, $body, $altBody = '') {
+    // Check if configuration is set
+    if (empty(SMTP_USER) || empty(SMTP_PASS)) {
+        error_log("Email sending aborted: SMTP credentials are not configured.");
+        return false;
+    }
+
+    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+
+    try {
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host       = SMTP_HOST;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = SMTP_USER;
+        $mail->Password   = SMTP_PASS;
+        $mail->SMTPSecure = (strtolower(SMTP_SECURE) === 'ssl') ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = SMTP_PORT;
+        
+        // Disable SSL certificate verification for local environments (XAMPP/Laragon)
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
+
+        // Recipients
+        $mail->setFrom(SMTP_FROM_EMAIL ?: SMTP_USER, SMTP_FROM_NAME);
+        $mail->addAddress($to);
+
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $body;
+        if (!empty($altBody)) {
+            $mail->AltBody = $altBody;
+        } else {
+            $mail->AltBody = strip_tags(str_replace('<br>', "\n", $body));
+        }
+
+        $mail->send();
+        return true;
+    } catch (\PHPMailer\PHPMailer\Exception $e) {
+        error_log("Email sending failed. Mailer Error: {$mail->ErrorInfo}");
+        return false;
+    }
+}

@@ -74,8 +74,13 @@ $categories = db()->fetchAll("SELECT * FROM categories WHERE is_active = 1 ORDER
                         <span class="badge"><?= $cartCount ?></span>
                     <?php endif; ?>
                 </a>
+                <?php $headerUser = currentUser(); ?>
                 <a href="<?= APP_URL ?>/pages/dashboard.php" class="user-avatar-btn">
-                    <span><?= strtoupper(substr($_SESSION['username'], 0, 1)) ?></span>
+                    <?php if ($headerUser && $headerUser['avatar'] && $headerUser['avatar'] !== 'default.png'): ?>
+                        <img src="<?= getImageUrl($headerUser['avatar']) ?>" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;display:inline-block;">
+                    <?php else: ?>
+                        <span><?= strtoupper(substr($_SESSION['username'], 0, 1)) ?></span>
+                    <?php endif; ?>
                     <?= htmlspecialchars($_SESSION['username']) ?>
                 </a>
             <?php else: ?>

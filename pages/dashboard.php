@@ -21,25 +21,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container">
     <div class="dashboard-layout">
         <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="sidebar-avatar"><?= strtoupper(substr($user['username'], 0, 1)) ?></div>
-            <div class="sidebar-name"><?= htmlspecialchars($user['full_name'] ?: $user['username']) ?></div>
-            <div class="sidebar-balance"><?= rupiah($user['balance']) ?></div>
-            <div style="text-align:center;margin-bottom:20px;">
-                <a href="<?= APP_URL ?>/pages/topup-balance.php" class="btn btn-gold btn-sm">+ Isi Saldo</a>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="<?= APP_URL ?>/pages/dashboard.php" class="active">🏠 Dashboard</a>
-                <a href="<?= APP_URL ?>/pages/orders.php">📦 Pesanan Saya</a>
-                <a href="<?= APP_URL ?>/pages/cart.php">🛒 Keranjang</a>
-                <a href="<?= APP_URL ?>/pages/notifications.php">🔔 Notifikasi</a>
-                <a href="<?= APP_URL ?>/pages/profile.php">⚙️ Edit Profil</a>
-                <?php if (isAdmin()): ?>
-                    <a href="<?= APP_URL ?>/admin/index.php" style="color:var(--gold);">⚡ Panel Admin</a>
-                <?php endif; ?>
-                <a href="<?= APP_URL ?>/pages/logout.php" style="color:var(--error);">🚪 Keluar</a>
-            </nav>
-        </div>
+        <?php
+        $activePage = 'dashboard';
+        require_once __DIR__ . '/../includes/sidebar.php';
+        ?>
 
         <!-- MAIN CONTENT -->
         <div>

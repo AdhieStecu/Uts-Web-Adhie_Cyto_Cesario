@@ -32,20 +32,10 @@ require_once __DIR__ . '/../includes/header.php';
 <div class="container" style="padding-top:40px;padding-bottom:60px;">
     <div class="dashboard-layout">
         <!-- SIDEBAR -->
-        <div class="sidebar">
-            <?php $user = currentUser(); ?>
-            <div class="sidebar-avatar"><?= strtoupper(substr($_SESSION['username'], 0, 1)) ?></div>
-            <div class="sidebar-name"><?= htmlspecialchars($_SESSION['username']) ?></div>
-            <div class="sidebar-balance"><?= rupiah($user['balance']) ?></div>
-            <nav class="sidebar-nav">
-                <a href="<?= APP_URL ?>/pages/dashboard.php">🏠 Dashboard</a>
-                <a href="<?= APP_URL ?>/pages/orders.php" class="active">📦 Pesanan Saya</a>
-                <a href="<?= APP_URL ?>/pages/cart.php">🛒 Keranjang</a>
-                <a href="<?= APP_URL ?>/pages/notifications.php">🔔 Notifikasi</a>
-                <a href="<?= APP_URL ?>/pages/profile.php">⚙️ Edit Profil</a>
-                <a href="<?= APP_URL ?>/pages/logout.php" style="color:var(--error);">🚪 Keluar</a>
-            </nav>
-        </div>
+        <?php
+        $activePage = 'orders';
+        require_once __DIR__ . '/../includes/sidebar.php';
+        ?>
 
         <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">

@@ -87,7 +87,7 @@ function initImageCropper(fileInputId, hiddenInputId, previewId, aspectRatio = N
         cropModal.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,8,24,0.9);z-index:99999;align-items:center;justify-content:center;padding:20px;';
         cropModal.innerHTML = `
             <div style="background:var(--bg-card);border:1px solid rgba(0, 102, 255, 0.3);border-radius:16px;padding:24px;width:100%;max-width:600px;box-shadow:0 0 30px rgba(0,102,255,0.25);">
-                <h3 style="font-family:var(--font-head);margin-bottom:16px;color:white;display:flex;align-items:center;gap:10px;">✂️ Potong & Sesuaikan Gambar</h3>
+                <h3 style="font-family:var(--font-head);margin-bottom:16px;color:var(--text-primary);display:flex;align-items:center;gap:10px;">✂️ Potong & Sesuaikan Gambar</h3>
                 <div style="max-height:350px;overflow:hidden;background:#050818;border-radius:8px;border:1px solid var(--border);margin-bottom:20px;display:flex;justify-content:center;align-items:center;">
                     <img id="cropImageSrc" style="max-width:100%;max-height:350px;display:block;">
                 </div>
