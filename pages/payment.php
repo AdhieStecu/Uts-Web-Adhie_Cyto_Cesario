@@ -27,6 +27,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simulate_pay'])) {
     db()->execute("UPDATE orders SET payment_status = 'paid', status = 'processing' WHERE id = ?", 'i', $orderId);
     db()->execute("UPDATE products SET stock = stock - ?, sold_count = sold_count + ? WHERE id = ?", 'iii', $order['quantity'], $order['quantity'], $order['product_id']);
     
+    // Ambil data detail Pembeli dan Penjual
+    $buyer = db()->fetchOne("SELECT email, username, full_name FROM users WHERE id = ?", 'i', $order['buyer_id']);
+    $seller = db()->fetchOne("SELECT email, username, full_name FROM users WHERE id = ?", 'i', $order['seller_id']);
+
+    if ($buyer) {
+        $buyerName = htmlspecialchars($buyer['full_name'] ?: $buyer['username']);
+        $buyerSubject = "Invoice Pembayaran #" . $order['order_number'] . " - " . APP_NAME . " 💳";
+        $buyerBody = "
+            <h2 class='email-title'>Pembayaran Berhasil! 🎉</h2>
+            <p>Halo <strong>" . $buyerName . "</strong>,</p>
+            <p>Terima kasih telah melakukan pembayaran. Pesanan Anda saat ini sedang diproses oleh penjual.</p>
+            <div class='divider'></div>
+            <h3 style='color: #ffffff;'>Detail Transaksi:</h3>
+            <table class='detail-table'>
+                <tr>
+                    <th>No. Transaksi</th>
+                    <td><code>" . htmlspecialchars($order['order_number']) . "</code></td>
+                </tr>
+                <tr>
+                    <th>Produk</th>
+                    <td>" . htmlspecialchars($order['product_name']) . " (x" . $order['quantity'] . ")</td>
+                </tr>
+                <tr>
+                    <th>Biaya Layanan</th>
+                    <td>" . rupiah($order['platform_fee']) . "</td>
+                </tr>
+                <tr style='font-weight: bold; color: #f59e0b;'>
+                    <th>Total Pembayaran</th>
+                    <td><span class='text-highlight'>" . rupiah($order['total_price']) . "</span></td>
+                </tr>
+                <tr>
+                    <th>Metode Pembayaran</th>
+                    <td>" . htmlspecialchars($order['payment_method']) . "</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td><span class='badge badge-success'>Lunas (Paid)</span></td>
+                </tr>
+            </table>
+            <div style='text-align: center; margin-top: 30px;'>
+                <a href='" . APP_URL . "/pages/order-detail.php?id=" . $orderId . "' class='btn btn-accent'>📋 Lihat Detail Pesanan</a>
+            </div>
+        ";
+        sendEmail($buyer['email'], $buyerSubject, $buyerBody);
+    }
+
+    if ($seller) {
+        $sellerName = htmlspecialchars($seller['full_name'] ?: $seller['username']);
+        $sellerSubject = "Pesanan Baru Masuk #" . $order['order_number'] . " - " . APP_NAME . " 🎮";
+        $sellerGain = $order['total_price'] - $order['platform_fee'];
+        $sellerBody = "
+            <h2 class='email-title'>Ada Pesanan Baru! 🎉</h2>
+            <p>Halo Penjual <strong>" . $sellerName . "</strong>,</p>
+            <p>Pembayaran untuk pesanan <strong>#" . htmlspecialchars($order['order_number']) . "</strong> telah dikonfirmasi dan lunas.</p>
+            <p>Silakan segera proses dan kirimkan pesanan untuk pembeli.</p>
+            <div class='divider'></div>
+            <h3 style='color: #ffffff;'>Ringkasan Pesanan:</h3>
+            <table class='detail-table'>
+                <tr>
+                    <th>Produk</th>
+                    <td>" . htmlspecialchars($order['product_name']) . " (x" . $order['quantity'] . ")</td>
+                </tr>
+                <tr>
+                    <th>Pembeli</th>
+                    <td>" . htmlspecialchars($buyer['username'] ?? 'User') . "</td>
+                </tr>
+                <tr style='font-weight: bold; color: #f59e0b;'>
+                    <th>Pendapatan Bersih Anda</th>
+                    <td><span class='text-highlight'>" . rupiah($sellerGain) . "</span></td>
+                </tr>
+            </table>
+            <div style='text-align: center; margin-top: 30px;'>
+                <a href='" . APP_URL . "/pages/order-detail.php?id=" . $orderId . "' class='btn btn-accent'>⚙️ Proses Pesanan Sekarang</a>
+            </div>
+        ";
+        sendEmail($seller['email'], $sellerSubject, $sellerBody);
+    }
+
     sendNotification($_SESSION['user_id'], 'Pembayaran Berhasil! ✅', "Order #{$order['order_number']} telah dibayar. Seller sedang memproses.", 'success', APP_URL . '/pages/order-detail.php?id=' . $orderId);
     sendNotification($order['seller_id'], 'Ada Order Baru! 🎉', "Order #{$order['order_number']} telah dibayar. Segera proses!", 'info', APP_URL . '/pages/order-detail.php?id=' . $orderId);
     

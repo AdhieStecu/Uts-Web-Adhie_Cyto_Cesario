@@ -40,6 +40,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id'] = $userId;
                     $_SESSION['username'] = $username;
                     $_SESSION['role'] = 'user';
+                    
+                    // Kirim Email Selamat Datang (Welcome Email)
+                    $emailSubject = "Selamat Datang di " . APP_NAME . "! 🎮";
+                    $emailBody = "
+                        <h2 class='email-title'>Selamat Datang, " . htmlspecialchars($fullName ?: $username) . "! 👋</h2>
+                        <p>Terima kasih telah bergabung di <strong>" . htmlspecialchars(APP_NAME) . "</strong>, marketplace voucher game terpercaya di Indonesia.</p>
+                        <p>Akun Anda dengan username <strong>" . htmlspecialchars($username) . "</strong> telah berhasil didaftarkan.</p>
+                        <p>Sekarang Anda dapat melakukan transaksi dengan cepat, murah, dan aman:</p>
+                        <ul>
+                            <li>Top Up Diamond Mobile Legends, Free Fire, dll.</li>
+                            <li>Beli Voucher Steam, Google Play, Roblox Robux, dll.</li>
+                            <li>Proses otomatis dan layanan pelanggan 24/7.</li>
+                        </ul>
+                        <div style='text-align: center; margin-top: 30px;'>
+                            <a href='" . APP_URL . "' class='btn btn-accent'>🎮 Mulai Belanja Sekarang</a>
+                        </div>
+                        <p style='margin-top: 30px; font-size: 13px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 15px;'>
+                            Jika Anda tidak merasa mendaftar di website kami, silakan abaikan email ini.
+                        </p>
+                    ";
+                    sendEmail($email, $emailSubject, $emailBody);
+
                     sendNotification($userId, 'Selamat Datang! 🎉', 'Akun kamu berhasil dibuat. Selamat berbelanja!', 'success');
                     setFlash('success', 'Akun berhasil dibuat! Selamat belanja di BoloTopup.ID 🎮');
                     redirect(APP_URL . '/pages/dashboard.php');

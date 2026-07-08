@@ -454,16 +454,171 @@ function paginate($total, $perPage, $currentPage, $url) {
 
 // ---- EMAIL SENDER (SMTP) ----
 
-function sendEmail($to, $subject, $body, $altBody = '') {
+function getEmailTemplate($title, $content) {
+    return '
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>' . htmlspecialchars($title) . '</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #0f172a;
+                color: #f8fafc;
+            }
+            .email-wrapper {
+                width: 100%;
+                background-color: #0f172a;
+                padding: 40px 0;
+            }
+            .email-container {
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #1e293b;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+                border: 1px solid #334155;
+            }
+            .email-header {
+                background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+                padding: 30px;
+                text-align: center;
+                border-bottom: 3px solid #f59e0b;
+            }
+            .logo-text {
+                font-size: 28px;
+                font-weight: 800;
+                color: #ffffff;
+                text-decoration: none;
+                letter-spacing: 1px;
+            }
+            .logo-accent {
+                color: #f59e0b;
+            }
+            .email-body {
+                padding: 40px 30px;
+                line-height: 1.6;
+                color: #cbd5e1;
+            }
+            .email-title {
+                font-size: 22px;
+                font-weight: 700;
+                color: #ffffff;
+                margin-top: 0;
+                margin-bottom: 20px;
+            }
+            .email-footer {
+                background-color: #0f172a;
+                padding: 24px;
+                text-align: center;
+                font-size: 12px;
+                color: #64748b;
+                border-top: 1px solid #1e293b;
+            }
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: #3b82f6;
+                color: #ffffff !important;
+                text-decoration: none;
+                font-weight: 600;
+                border-radius: 6px;
+                margin-top: 20px;
+                margin-bottom: 10px;
+                text-align: center;
+                border: 1px solid #2563eb;
+            }
+            .btn-accent {
+                background-color: #f59e0b;
+                border-color: #d97706;
+                color: #0f172a !important;
+            }
+            .divider {
+                height: 1px;
+                background-color: #334155;
+                margin: 24px 0;
+            }
+            .badge {
+                display: inline-block;
+                padding: 4px 8px;
+                font-size: 12px;
+                font-weight: 600;
+                border-radius: 4px;
+                background-color: #334155;
+                color: #cbd5e1;
+            }
+            .badge-success {
+                background-color: #065f46;
+                color: #34d399;
+            }
+            .text-highlight {
+                color: #f59e0b;
+                font-weight: bold;
+            }
+            .detail-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .detail-table th, .detail-table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #334155;
+            }
+            .detail-table th {
+                color: #94a3b8;
+                font-weight: 600;
+                font-size: 13px;
+            }
+            .detail-table td {
+                color: #f8fafc;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="email-wrapper">
+            <div class="email-container">
+                <div class="email-header">
+                    <span class="logo-text">⚡ BoloTopup<span class="logo-accent">.ID</span></span>
+                </div>
+                <div class="email-body">
+                    ' . $content . '
+                </div>
+                <div class="email-footer">
+                    <p>Email ini dikirim secara otomatis oleh sistem ' . APP_NAME . '.</p>
+                    <p>&copy; ' . date('Y') . ' BoloTopup.ID. Hak Cipta Dilindungi.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>';
+}
+
+function sendEmail($to, $subject, $body, $altBody = '', $debug = false) {
     // Check if configuration is set
     if (empty(SMTP_USER) || empty(SMTP_PASS)) {
         error_log("Email sending aborted: SMTP credentials are not configured.");
+        if ($debug) {
+            echo "<strong style='color:red;'>GALAT: Kredensial SMTP kosong pada berkas .env!</strong><br>";
+        }
         return false;
     }
 
     $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
 
     try {
+        if ($debug) {
+            $mail->SMTPDebug = 3; // Enable verbose debug output
+            $mail->Debugoutput = function($str, $level) {
+                echo "<code style='display:block;padding:2px 8px;margin:2px 0;background:#0d1530;color:#3b82f6;font-size:12px;'>" . htmlspecialchars($str) . "</code>";
+            };
+        }
+
         // Server settings
         $mail->isSMTP();
         $mail->Host       = SMTP_HOST;
@@ -486,10 +641,17 @@ function sendEmail($to, $subject, $body, $altBody = '') {
         $mail->setFrom(SMTP_FROM_EMAIL ?: SMTP_USER, SMTP_FROM_NAME);
         $mail->addAddress($to);
 
+        // Wrap the body with HTML template if it does not contain a full HTML structure
+        if (strpos($body, '<html') === false && strpos($body, '<body') === false) {
+            $formattedBody = getEmailTemplate($subject, $body);
+        } else {
+            $formattedBody = $body;
+        }
+
         // Content
         $mail->isHTML(true);
         $mail->Subject = $subject;
-        $mail->Body    = $body;
+        $mail->Body    = $formattedBody;
         if (!empty($altBody)) {
             $mail->AltBody = $altBody;
         } else {
@@ -500,6 +662,9 @@ function sendEmail($to, $subject, $body, $altBody = '') {
         return true;
     } catch (\PHPMailer\PHPMailer\Exception $e) {
         error_log("Email sending failed. Mailer Error: {$mail->ErrorInfo}");
+        if ($debug) {
+            echo "<strong style='color:red;'>Exception PHPMailer: " . htmlspecialchars($e->getMessage()) . "</strong><br>";
+        }
         return false;
     }
 }

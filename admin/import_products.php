@@ -20,13 +20,30 @@ if ($action === 'template') {
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Products');
         
-        $headers = ['Nama Produk', 'ID Kategori', 'Harga Jual', 'Harga Coret', 'Stok', 'Nama Game', 'Platform', 'Tipe Kirim (instant/manual)', 'Deskripsi'];
+        $sheet->setShowGridLines(true);
+        $sheet->getRowDimension(1)->setRowHeight(28);
+
+        $headers = [
+            'Nama Produk *', 'ID Kategori *', 'Harga Jual *', 'Harga Coret', 
+            'Stok *', 'Nama Game', 'Platform', 'Tipe Kirim * (instant/manual)', 'Deskripsi'
+        ];
+        
         foreach ($headers as $colIndex => $header) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
             $sheet->setCellValue($colLetter . '1', $header);
+            
+            // Mandatory headers (Teal) vs Optional headers (Navy) styling
+            $isRequired = (in_array($colIndex, [0, 1, 2, 4, 7]));
+            $bgColor = $isRequired ? 'FF0D9488' : 'FF1E3A8A';
+            
+            $style = $sheet->getStyle($colLetter . '1');
+            $style->getFont()->setBold(true)->setName('Segoe UI')->setSize(11)->setColor(new Color(Color::COLOR_WHITE));
+            $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($bgColor);
+            $style->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $style->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
         }
         
-        // Sample Row
+        // Sample Row (Row 2)
         $sample = [
             'Mobile Legends 366 Diamond',
             1,
@@ -36,17 +53,45 @@ if ($action === 'template') {
             'Mobile Legends',
             'Android/iOS',
             'instant',
-            'Top up diamond cepat 24 jam'
+            'Top up diamond cepat otomatis 24 jam'
         ];
+        
+        $sheet->getRowDimension(2)->setRowHeight(20);
         foreach ($sample as $colIndex => $val) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
             $sheet->setCellValue($colLetter . '2', $val);
+            
+            // Styling sample data
+            $cellStyle = $sheet->getStyle($colLetter . '2');
+            $cellStyle->getFont()->setName('Segoe UI')->setSize(10)->setColor(new Color('475569'));
+            
+            // Alignments
+            if (in_array($colIndex, [1, 4, 7])) {
+                $cellStyle->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            }
+            
+            // Formats
+            if (in_array($colIndex, [2, 3])) {
+                $cellStyle->getNumberFormat()->setFormatCode('"Rp"#,##0');
+            }
         }
         
+        // Auto-fit columns
         foreach (range(1, 9) as $col) {
             $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
             $sheet->getColumnDimension($colLetter)->setAutoSize(true);
         }
+        
+        // Borders
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFCBD5E1'],
+                ],
+            ],
+        ];
+        $sheet->getStyle('A1:I2')->applyFromArray($styleArray);
         
         $tempFile = tempnam(sys_get_temp_dir(), 'xls');
         $writer = new Xlsx($spreadsheet);
@@ -68,31 +113,52 @@ if ($action === 'template') {
         
     } elseif ($format === 'word') {
         $phpWord = new PhpWord();
-        $section = $phpWord->addSection();
+        $section = $phpWord->addSection([
+            'orientation' => 'landscape',
+            'marginLeft' => 600,
+            'marginRight' => 600,
+            'marginTop' => 800,
+            'marginBottom' => 800,
+        ]);
         
-        $section->addText("TEMPLATE IMPORT PRODUK BOLOTOPUP.ID", ['bold' => true, 'size' => 14]);
-        $section->addText("Pastikan tabel memiliki susunan kolom di bawah ini dan baris pertama dilewati (sebagai header).");
+        $section->addText("TEMPLATE IMPORT PRODUK BOLOTOPUP.ID", ['bold' => true, 'size' => 14, 'color' => '1E3A8A', 'name' => 'Segoe UI'], ['alignment' => 'center']);
+        $section->addText("Panduan Susunan Kolom Tabel Import Produk. Kolom bertanda (*) adalah WAJIB diisi.", ['size' => 10, 'italic' => true, 'color' => '475569', 'name' => 'Segoe UI'], ['alignment' => 'center']);
         $section->addTextBreak(1);
         
-        $tableStyle = ['borderSize' => 6, 'borderColor' => '999999', 'cellMargin' => 50];
-        $firstRowStyle = ['bgColor' => '4f46e5'];
-        $phpWord->addTableStyle('TemplateTable', $tableStyle, $firstRowStyle);
+        $tableStyle = [
+            'borderSize' => 6, 
+            'borderColor' => 'CBD5E1', 
+            'cellMargin' => 80,
+            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+        ];
+        $phpWord->addTableStyle('TemplateTable', $tableStyle);
         $table = $section->addTable('TemplateTable');
         
         // Headers
-        $table->addRow();
-        $textHeader = ['bold' => true, 'color' => 'FFFFFF', 'size' => 8];
-        $headers = ['Nama', 'ID Kat', 'Harga', 'Orig Harga', 'Stok', 'Game', 'Platform', 'Tipe Kirim', 'Deskripsi'];
-        foreach ($headers as $h) {
-            $table->addCell(1100)->addText($h, $textHeader);
+        $table->addRow(400);
+        $headers = [
+            'Nama Produk *', 'ID Kategori *', 'Harga Jual *', 'Harga Coret', 
+            'Stok *', 'Nama Game', 'Platform', 'Tipe Kirim *', 'Deskripsi'
+        ];
+        
+        foreach ($headers as $colIndex => $h) {
+            $isRequired = (in_array($colIndex, [0, 1, 2, 4, 7]));
+            $bgColor = $isRequired ? '0D9488' : '1E3A8A';
+            
+            $cell = $table->addCell(1200, ['bgColor' => $bgColor]);
+            $cell->addText($h, ['bold' => true, 'color' => 'FFFFFF', 'size' => 9, 'name' => 'Segoe UI'], ['alignment' => 'center']);
         }
         
         // Sample Row
-        $table->addRow();
-        $textRow = ['size' => 8];
-        $sample = ['MLBB 366 Diamond', '1', '85000', '100000', '99', 'Mobile Legends', 'Android/iOS', 'instant', 'Top up diamond cepat'];
-        foreach ($sample as $s) {
-            $table->addCell(1100)->addText($s, $textRow);
+        $table->addRow(300);
+        $textRow = ['size' => 9, 'name' => 'Segoe UI', 'color' => '475569'];
+        $sample = [
+            'MLBB 366 Diamond', '1', '85000', '100000', '99', 
+            'Mobile Legends', 'Android/iOS', 'instant', 'Top up diamond otomatis'
+        ];
+        foreach ($sample as $colIndex => $s) {
+            $align = (in_array($colIndex, [1, 4, 7])) ? 'center' : 'left';
+            $table->addCell(1200)->addText($s, $textRow, ['alignment' => $align]);
         }
         
         $tempFile = tempnam(sys_get_temp_dir(), 'doc');
@@ -116,31 +182,193 @@ if ($action === 'template') {
     } elseif ($format === 'pdf') {
         $appLogo = '⚡ BoloTopup.ID';
         $html = "
-        <html>
+        <!DOCTYPE html>
+        <html lang='id'>
         <head>
+            <meta charset='UTF-8'>
             <title>Template Import PDF</title>
             <style>
-                body { font-family: sans-serif; font-size: 11px; color: #333; line-height: 1.6; }
-                h2 { color: #4f46e5; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
-                .note { background: #f1f5f9; padding: 10px; border-left: 4px solid #4f46e5; margin-bottom: 15px; }
-                .sample { font-family: monospace; background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 6px; }
+                body { 
+                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                    font-size: 11px; 
+                    color: #334155; 
+                    line-height: 1.6; 
+                    margin: 0;
+                    padding: 10px;
+                }
+                .header {
+                    border-bottom: 3px solid #1e3a8a;
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+                .header-logo {
+                    font-size: 20px;
+                    font-weight: 800;
+                    color: #1e3a8a;
+                }
+                .title {
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #0f172a;
+                    margin-top: 5px;
+                }
+                .note { 
+                    background-color: #f1f5f9; 
+                    padding: 12px; 
+                    border-left: 4px solid #0d9488; 
+                    border-radius: 4px;
+                    margin-bottom: 20px; 
+                }
+                .badge {
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 8px;
+                    text-transform: uppercase;
+                }
+                .badge-req { background-color: #fee2e2; color: #991b1b; }
+                .badge-opt { background-color: #f1f5f9; color: #475569; }
+                
+                table.fields-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 25px;
+                }
+                table.fields-table th {
+                    background-color: #1e3a8a;
+                    color: #ffffff;
+                    font-weight: bold;
+                    padding: 8px;
+                    border: 1px solid #cbd5e1;
+                    font-size: 10px;
+                }
+                table.fields-table td {
+                    padding: 8px;
+                    border: 1px solid #cbd5e1;
+                    font-size: 9px;
+                }
+                table.fields-table tr:nth-child(even) {
+                    background-color: #f8fafc;
+                }
+
+                .sample-title {
+                    font-weight: bold;
+                    color: #1e3a8a;
+                    margin-bottom: 6px;
+                    font-size: 10px;
+                }
+                .sample-box { 
+                    font-family: 'Courier New', Courier, monospace; 
+                    background-color: #0f172a; 
+                    color: #38bdf8; 
+                    padding: 12px; 
+                    border-radius: 6px; 
+                    font-size: 10px;
+                    line-height: 1.5;
+                    border: 1px solid #1e293b;
+                    margin-bottom: 20px;
+                }
+                .sample-comment { color: #64748b; }
             </style>
         </head>
         <body>
-            <h2>{$appLogo} - TEMPLATE IMPORT PRODUK (PDF)</h2>
+            <div class='header'>
+                <div class='header-logo'>{$appLogo}</div>
+                <div class='title'>PANDUAN & TEMPLATE IMPORT PRODUK (PDF)</div>
+            </div>
+            
             <div class='note'>
-                Untuk melakukan import via PDF, silakan tulis list produk Anda baris demi baris menggunakan format pembatas pipa (<strong>|</strong>) seperti contoh di bawah ini:
+                Untuk melakukan import massal via berkas PDF, silakan tulis daftar produk Anda baris demi baris menggunakan format pemisah pipa (<strong>|</strong>) di dalam dokumen PDF Anda seperti petunjuk di bawah ini.
             </div>
             
-            <p><strong>Format Kolom:</strong></p>
-            <div class='sample'>
-                Nama Produk | ID Kategori | Harga Jual | Harga Coret | Stok | Nama Game | Platform | Tipe Kirim (instant/manual) | Deskripsi
+            <h3 style='color:#0f172a; font-size:12px; margin-bottom:10px;'>Detail Struktur Kolom</h3>
+            <table class='fields-table'>
+                <thead>
+                    <tr>
+                        <th style='width: 5%;'>No</th>
+                        <th style='width: 20%;'>Nama Kolom</th>
+                        <th style='width: 15%;'>Status</th>
+                        <th style='width: 15%;'>Tipe Data</th>
+                        <th>Keterangan & Contoh</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style='text-align:center;'>1</td>
+                        <td><strong>Nama Produk</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-req'>Wajib</span></td>
+                        <td>Teks</td>
+                        <td>Nama barang game. Contoh: MLBB 366 Diamond</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>2</td>
+                        <td><strong>ID Kategori</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-req'>Wajib</span></td>
+                        <td>Angka (ID)</td>
+                        <td>ID Kategori dari Admin Panel. Contoh: 1</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>3</td>
+                        <td><strong>Harga Jual</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-req'>Wajib</span></td>
+                        <td>Angka (Desimal)</td>
+                        <td>Harga jual tanpa Rp atau titik. Contoh: 85000</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>4</td>
+                        <td><strong>Harga Coret</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-opt'>Opsional</span></td>
+                        <td>Angka (Desimal)</td>
+                        <td>Harga sebelum diskon. Kosongkan jika tidak ada diskon. Contoh: 100000</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>5</td>
+                        <td><strong>Stok</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-req'>Wajib</span></td>
+                        <td>Angka (Bulat)</td>
+                        <td>Jumlah stok produk. Contoh: 99</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>6</td>
+                        <td><strong>Nama Game</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-opt'>Opsional</span></td>
+                        <td>Teks</td>
+                        <td>Nama game terkait. Contoh: Mobile Legends</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>7</td>
+                        <td><strong>Platform</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-opt'>Opsional</span></td>
+                        <td>Teks</td>
+                        <td>Platform game. Contoh: Android/iOS</td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>8</td>
+                        <td><strong>Tipe Kirim</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-req'>Wajib</span></td>
+                        <td>Teks</td>
+                        <td>Hanya isi dengan: <strong>instant</strong> atau <strong>manual</strong></td>
+                    </tr>
+                    <tr>
+                        <td style='text-align:center;'>9</td>
+                        <td><strong>Deskripsi</strong></td>
+                        <td style='text-align:center;'><span class='badge badge-opt'>Opsional</span></td>
+                        <td>Teks</td>
+                        <td>Penjelasan produk. Contoh: Proses pengisian 24 jam cepat</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class='sample-title'>Format Baris Data:</div>
+            <div class='sample-box'>
+                <span class='sample-comment'># Kolom dibatasi oleh karakter |</span><br>
+                Nama Produk | ID Kategori | Harga Jual | Harga Coret | Stok | Nama Game | Platform | Tipe Kirim | Deskripsi
             </div>
             
-            <p><strong>Contoh Baris Data:</strong></p>
-            <div class='sample'>
+            <div class='sample-title'>Contoh Data Riil:</div>
+            <div class='sample-box'>
                 Mobile Legends 366 Diamond | 1 | 85000 | 100000 | 99 | Mobile Legends | Android/iOS | instant | Top up instan cepat<br>
-                Free Fire 140 Diamond | 1 | 20000 | 25000 | 150 | Free Fire | Android/iOS | instant | Kirim instan
+                Free Fire 140 Diamond | 1 | 20000 | | 150 | Free Fire | Android/iOS | instant | Kirim instan cepat
             </div>
         </body>
         </html>";
@@ -360,30 +588,35 @@ $categories = db()->fetchAll("SELECT id, name FROM categories WHERE is_active = 
 <body>
 <div class="admin-topbar">
     <div class="brand">⚡ BoloTopup Admin</div>
-    <div style="display:flex;gap:12px;">
-        <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">🌐 Website</a>
+    <div class="top-actions">
+        <span>👤 <?= htmlspecialchars($_SESSION['username']) ?></span>
+        <a href="<?= APP_URL ?>" class="btn btn-outline btn-sm">🌐 Lihat Website</a>
         <a href="<?= APP_URL ?>/pages/logout.php" class="btn btn-danger btn-sm">Keluar</a>
     </div>
 </div>
 <div class="admin-wrap">
+    <!-- SIDEBAR -->
     <aside class="admin-sidebar">
-        <div class="brand" style="padding:20px;">⚡ Admin</div>
+        <div class="brand" style="padding:20px;">⚡ Admin Panel</div>
         <a href="<?= APP_URL ?>/admin/index.php">📊 Dashboard</a>
         <a href="<?= APP_URL ?>/admin/products.php" class="active">🎮 Produk</a>
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php">👥 Pengguna</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
+        <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
+        <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
+        <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
     </aside>
     
     <div class="admin-content">
         <div class="admin-header">
-            <h1 class="admin-title">📥 Import Produk massal</h1>
+            <h1 class="admin-title">📥 Import Produk Massal</h1>
             <a href="<?= APP_URL ?>/admin/products.php" class="btn btn-outline">← Kembali</a>
         </div>
         
         <?php if (!empty($errors)): ?>
-            <div class="flash-message flash-error">
+            <div class="flash-message flash-error" style="margin-bottom: 24px;">
                 <?php foreach ($errors as $e): ?>
                     <p>⚠️ <?= htmlspecialchars($e) ?></p>
                 <?php endforeach; ?>
@@ -394,27 +627,38 @@ $categories = db()->fetchAll("SELECT id, name FROM categories WHERE is_active = 
             <!-- FILE UPLOAD CARD -->
             <div class="card">
                 <div class="card-body">
-                    <h3 style="font-family:var(--font-head); margin-bottom:16px;">📁 Unggah Berkas</h3>
-                    <p style="color:var(--text-secondary); font-size:14px; margin-bottom:20px;">
-                        Pilih file Excel (.xlsx), Word (.docx), atau PDF (.pdf) Anda dan klik tombol di bawah untuk mengimpor produk.
+                    <h3 style="font-family:var(--font-head); margin-bottom:16px; font-weight:700;">📁 Unggah Berkas Excel/Word/PDF</h3>
+                    <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px; line-height:1.6;">
+                        Silakan unggah file berformat Excel (.xlsx), Word (.docx), atau PDF (.pdf) sesuai dengan struktur kolom template yang didukung. Sistem akan memproses dan menambahkan produk secara otomatis ke katalog.
                     </p>
                     
-                    <form method="POST" enctype="multipart/form-data">
+                    <form method="POST" enctype="multipart/form-data" style="background: rgba(255,255,255,0.02); border: 2px dashed var(--border); padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
                         <?= csrfInput() ?>
-                        <div class="form-group">
-                            <label class="form-label">Berkas File *</label>
-                            <input type="file" name="import_file" class="form-control" accept=".xlsx, .docx, .pdf" required>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label class="form-label" style="display:block; font-weight:600; margin-bottom:10px;">Pilih File Unggahan</label>
+                            <input type="file" name="import_file" class="form-control" accept=".xlsx, .docx, .pdf" required style="padding:10px; background:var(--bg-card); color:var(--text-primary); border-radius:6px; border:1px solid var(--border); display:inline-block; max-width:100%;">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block">🚀 Mulai Import Produk</button>
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:10px;">
+                            📥 Unggah & Proses Import Produk
+                        </button>
                     </form>
                     
                     <hr style="border-color:var(--border); margin:24px 0;">
                     
-                    <h4 style="font-family:var(--font-head); margin-bottom:12px;">⬇️ Unduh Berkas Contoh (Template)</h4>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <a href="?action=template&format=excel" class="btn btn-success btn-sm">📊 Excel Template</a>
-                        <a href="?action=template&format=word" class="btn btn-info btn-sm">📝 Word Template</a>
-                        <a href="?action=template&format=pdf" class="btn btn-danger btn-sm">📕 PDF Template</a>
+                    <h4 style="font-family:var(--font-head); margin-bottom:14px; font-weight:700; color:var(--accent);">⬇️ Unduh Berkas Contoh (Template)</h4>
+                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">
+                        Unduh file contoh berikut sebagai acuan untuk mengisi data produk Anda dengan benar:
+                    </p>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <a href="?action=template&format=excel" class="btn btn-success btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+                            📊 Unduh Excel Template
+                        </a>
+                        <a href="?action=template&format=word" class="btn btn-info btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+                            📝 Unduh Word Template
+                        </a>
+                        <a href="?action=template&format=pdf" class="btn btn-danger btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+                            📕 Unduh PDF Template
+                        </a>
                     </div>
                 </div>
             </div>
@@ -422,33 +666,37 @@ $categories = db()->fetchAll("SELECT id, name FROM categories WHERE is_active = 
             <!-- GUIDE CARD -->
             <div class="card">
                 <div class="card-body">
-                    <h3 style="font-family:var(--font-head); margin-bottom:16px;">📋 Petunjuk & Referensi</h3>
-                    <h4 style="font-family:var(--font-head); font-size:14px; margin-bottom:8px;">1. ID Kategori Terdaftar</h4>
-                    <p style="color:var(--text-secondary); font-size:13px; margin-bottom:10px;">
-                        Gunakan angka ID di bawah ini pada kolom "ID Kategori" di file Anda:
-                    </p>
-                    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:20px;">
-                        <thead>
-                            <tr style="border-bottom:2px solid var(--border); text-align:left;">
-                                <th style="padding:6px 0;">ID Kategori</th>
-                                <th style="padding:6px 0;">Nama Kategori</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($categories as $cat): ?>
-                                <tr style="border-bottom:1px solid var(--border);">
-                                    <td style="padding:6px 0;"><strong><?= $cat['id'] ?></strong></td>
-                                    <td style="padding:6px 0;"><?= htmlspecialchars($cat['name']) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <h3 style="font-family:var(--font-head); margin-bottom:16px; font-weight:700;">📋 Petunjuk & Referensi Pengisian</h3>
                     
-                    <h4 style="font-family:var(--font-head); font-size:14px; margin-bottom:8px;">2. Aturan Format</h4>
-                    <ul style="font-size:13px; color:var(--text-secondary); padding-left:20px; line-height:1.8;">
-                        <li><strong>Harga Jual / Coret</strong>: Input berupa angka biasa tanpa RP atau tanda titik (contoh: 85000).</li>
-                        <li><strong>Stok</strong>: Masukkan jumlah angka bulat (contoh: 100).</li>
-                        <li><strong>Tipe Kirim</strong>: Isi hanya dengan <code style="color:var(--accent);">instant</code> (pengiriman instan) atau <code style="color:var(--accent);">manual</code>.</li>
+                    <h4 style="font-family:var(--font-head); font-size:14px; margin-bottom:10px; color:var(--text-primary);">1. ID Kategori Terdaftar</h4>
+                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px; line-height:1.5;">
+                        Masukkan nilai angka ID kategori di bawah ini pada kolom <strong>"ID Kategori"</strong> di file Anda untuk memetakan produk dengan benar:
+                    </p>
+                    <div style="background:var(--bg-card2); border-radius:8px; border:1px solid var(--border); padding:10px; margin-bottom:24px; max-height:220px; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--border); text-align:left; color:var(--text-muted);">
+                                    <th style="padding:8px;">ID</th>
+                                    <th style="padding:8px;">Nama Kategori</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($categories as $cat): ?>
+                                    <tr style="border-bottom:1px solid var(--border); hover:background-color:rgba(255,255,255,0.02)">
+                                        <td style="padding:8px; color:var(--accent);"><strong><?= $cat['id'] ?></strong></td>
+                                        <td style="padding:8px; font-weight:600;"><?= htmlspecialchars($cat['name']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h4 style="font-family:var(--font-head); font-size:14px; margin-bottom:10px; color:var(--text-primary);">2. Aturan Pengisian Kolom</h4>
+                    <ul style="font-size:13px; color:var(--text-muted); padding-left:20px; line-height:1.8;">
+                        <li><strong style="color:var(--text-primary);">Nama Produk</strong>: Wajib diisi (maksimal 255 karakter).</li>
+                        <li><strong style="color:var(--text-primary);">Harga Jual / Coret</strong>: Input berupa angka biasa tanpa RP, titik, atau koma (contoh: <code style="color:var(--accent);">85000</code>).</li>
+                        <li><strong style="color:var(--text-primary);">Stok</strong>: Wajib diisi berupa angka bulat positif (contoh: <code style="color:var(--accent);">100</code>).</li>
+                        <li><strong style="color:var(--text-primary);">Tipe Kirim</strong>: Hanya diisi dengan teks kecil <code style="color:var(--accent);">instant</code> (otomatis langsung terkirim) atau <code style="color:var(--accent);">manual</code>.</li>
                     </ul>
                 </div>
             </div>
