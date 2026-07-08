@@ -57,13 +57,16 @@ $users = db()->fetchAll("SELECT * FROM users $where ORDER BY created_at DESC LIM
 </div>
 <div class="admin-wrap">
     <aside class="admin-sidebar">
-        <div class="brand" style="padding:20px;">⚡ Admin</div>
+        <div class="brand" style="padding:20px;">⚡ Admin Panel</div>
         <a href="<?= APP_URL ?>/admin/index.php">📊 Dashboard</a>
         <a href="<?= APP_URL ?>/admin/products.php">🎮 Produk</a>
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php" class="active">👥 Pengguna</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
+        <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
+        <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
+        <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
     </aside>
     <div class="admin-content">
         <?php showFlash(); ?>

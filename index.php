@@ -269,6 +269,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div style="text-align:left; font-size:15px; line-height:1.8; color:var(--text-secondary); font-family:var(--font-body);">
                             <p>Halo! Butuh bantuan transaksi di <strong>BoloTopup.ID</strong>? Hubungi tim CS kami yang siap siaga melayani Anda.</p>
                             <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+                                <a href="<?= APP_URL ?>/pages/faq.php" class="btn btn-gold btn-block" style="color:black; font-weight:700; text-decoration:none; justify-content:center; font-family:var(--font-head);">
+                                    ❓ Kunjungi Pusat Bantuan & FAQ
+                                </a>
                                 <a href="https://wa.me/6281234567890" target="_blank" class="btn btn-success btn-block" style="color:black; font-weight:700; text-decoration:none; justify-content:center; font-family:var(--font-head);">
                                     💬 Chat WhatsApp (+62 812-3456-7890)
                                 </a>

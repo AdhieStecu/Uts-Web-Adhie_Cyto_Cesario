@@ -46,6 +46,7 @@ $recentOrders = db()->fetchAll("SELECT o.*, u.username, p.name as product_name F
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
+        <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
     </aside>
 
     <!-- CONTENT -->
