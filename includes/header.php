@@ -1,6 +1,7 @@
 <?php
 // File: includes/header.php
 require_once __DIR__ . '/functions.php';
+logVisitor();
 $cartCount = isLoggedIn() ? cartCount() : 0;
 $notifCount = isLoggedIn() ? unreadNotifCount($_SESSION['user_id']) : 0;
 $categories = db()->fetchAll("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order");

@@ -63,10 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_test'])) {
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php">👥 Pengguna</a>
+        <a href="<?= APP_URL ?>/admin/tinjau-seller.php">🔍 Tinjau Seller</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
         <a href="<?= APP_URL ?>/admin/test-smtp.php" class="active">📧 Test SMTP</a>
+        <a href="<?= APP_URL ?>/admin/backup.php">🗄️ Backup Database</a>
     </aside>
 
     <!-- CONTENT -->

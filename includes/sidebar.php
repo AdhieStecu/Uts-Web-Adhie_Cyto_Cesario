@@ -23,6 +23,12 @@ $activePage = isset($activePage) ? $activePage : '';
         <a href="<?= APP_URL ?>/pages/cart.php" class="<?= $activePage === 'cart' ? 'active' : '' ?>">🛒 Keranjang</a>
         <a href="<?= APP_URL ?>/pages/notifications.php" class="<?= $activePage === 'notifications' ? 'active' : '' ?>">🔔 Notifikasi</a>
         <a href="<?= APP_URL ?>/pages/profile.php" class="<?= $activePage === 'profile' ? 'active' : '' ?>">⚙️ Edit Profil</a>
+        <?php 
+        $isSeller = ($user['role'] === 'seller') || (db()->fetchOne("SELECT COUNT(*) as cnt FROM products WHERE seller_id = ?", 'i', $user['id'])['cnt'] > 0);
+        if ($isSeller): 
+        ?>
+            <a href="<?= APP_URL ?>/pages/seller-dashboard.php" class="<?= $activePage === 'seller-dashboard' ? 'active' : '' ?>">🏪 Dashboard Penjual</a>
+        <?php endif; ?>
         <?php if (isAdmin()): ?>
             <a href="<?= APP_URL ?>/admin/index.php" style="color:var(--gold);">⚡ Panel Admin</a>
         <?php endif; ?>

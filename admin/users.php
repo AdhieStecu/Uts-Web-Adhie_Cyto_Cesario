@@ -8,11 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = (int)($_POST['user_id'] ?? 0);
     $action = sanitize($_POST['action'] ?? '');
     if ($userId && $userId !== $_SESSION['user_id']) {
-        if ($action === 'toggle_role') {
-            $user = db()->fetchOne("SELECT role FROM users WHERE id = ?", 'i', $userId);
-            $newRole = $user['role'] === 'admin' ? 'user' : 'admin';
-            db()->execute("UPDATE users SET role = ? WHERE id = ?", 'si', $newRole, $userId);
-            setFlash('success', 'Role user berhasil diubah.');
+        if ($action === 'change_role') {
+            $newRole = sanitize($_POST['role'] ?? 'user');
+            if (in_array($newRole, ['user', 'seller', 'admin'])) {
+                db()->execute("UPDATE users SET role = ? WHERE id = ?", 'si', $newRole, $userId);
+                setFlash('success', 'Role user berhasil diubah.');
+            }
         } elseif ($action === 'delete') {
             db()->execute("DELETE FROM users WHERE id = ? AND role != 'admin'", 'i', $userId);
             setFlash('success', 'User berhasil dihapus.');
@@ -63,10 +64,12 @@ $users = db()->fetchAll("SELECT * FROM users $where ORDER BY created_at DESC LIM
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php" class="active">👥 Pengguna</a>
+        <a href="<?= APP_URL ?>/admin/tinjau-seller.php">🔍 Tinjau Seller</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
         <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
+        <a href="<?= APP_URL ?>/admin/backup.php">🗄️ Backup Database</a>
     </aside>
     <div class="admin-content">
         <?php showFlash(); ?>
@@ -102,20 +105,28 @@ $users = db()->fetchAll("SELECT * FROM users $where ORDER BY created_at DESC LIM
                                 </td>
                                 <td style="color:var(--text-muted);"><?= htmlspecialchars($user['email']) ?></td>
                                 <td>
-                                    <span class="status-badge <?= $user['role']==='admin'?'status-completed':'status-active' ?>">
-                                        <?= $user['role'] === 'admin' ? '👑 Admin' : '👤 User' ?>
-                                    </span>
+                                    <?php if ($user['role'] === 'admin'): ?>
+                                        <span class="status-badge status-completed">👑 Admin</span>
+                                    <?php elseif ($user['role'] === 'seller'): ?>
+                                        <span class="status-badge status-active" style="background:#06b6d4; color:#fff; font-weight:700;">🏪 Seller</span>
+                                    <?php else: ?>
+                                        <span class="status-badge status-pending">👤 User</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td style="color:var(--gold);font-weight:700;"><?= rupiah($user['balance']) ?></td>
                                 <td style="color:var(--text-muted);font-size:13px;"><?= date('d M Y', strtotime($user['created_at'])) ?></td>
                                 <td>
                                     <?php if ($user['id'] !== (int)$_SESSION['user_id']): ?>
                                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                        <form method="POST" style="display:inline;">
+                                        <form method="POST" style="display:inline-block;">
                                             <?= csrfInput() ?>
                                             <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
-                                            <input type="hidden" name="action" value="toggle_role">
-                                            <button class="btn btn-outline btn-sm"><?= $user['role']==='admin'?'⬇️ Jadi User':'⬆️ Jadi Admin' ?></button>
+                                            <input type="hidden" name="action" value="change_role">
+                                            <select name="role" class="form-control" style="font-size:12px; padding:4px 8px; width:auto; height:32px; background:var(--bg-card2); color:var(--text-primary); border:1px solid var(--border); border-radius:6px; cursor:pointer;" onchange="this.form.submit()">
+                                                <option value="user" <?= $user['role'] === 'user' ? 'selected' : '' ?>>👤 User</option>
+                                                <option value="seller" <?= $user['role'] === 'seller' ? 'selected' : '' ?>>🏪 Seller</option>
+                                                <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>👑 Admin</option>
+                                            </select>
                                         </form>
                                         <!-- Tambah Saldo Modal -->
                                         <button class="btn btn-gold btn-sm" onclick="addBalance(<?= $user['id'] ?>, '<?= htmlspecialchars($user['username']) ?>')">💰 Saldo</button>

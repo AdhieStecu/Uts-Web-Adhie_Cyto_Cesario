@@ -11,6 +11,20 @@ $totalOrders = db()->fetchOne("SELECT COUNT(*) as cnt FROM orders")['cnt'];
 $totalRevenue = db()->fetchOne("SELECT COALESCE(SUM(platform_fee),0) as total FROM orders WHERE payment_status = 'paid'")['total'];
 $pendingOrders = db()->fetchOne("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'")['cnt'];
 $recentOrders = db()->fetchAll("SELECT o.*, u.username, p.name as product_name FROM orders o JOIN users u ON o.buyer_id = u.id JOIN products p ON o.product_id = p.id ORDER BY o.created_at DESC LIMIT 10");
+
+// Visitor Stats (last 30 days)
+$rawVisitors = db()->fetchAll("SELECT visited_date, COUNT(DISTINCT ip_address) as unique_visitors FROM visitor_logs WHERE visited_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY visited_date ORDER BY visited_date ASC");
+$indexedVisitors = [];
+foreach ($rawVisitors as $row) {
+    $indexedVisitors[$row['visited_date']] = (int)$row['unique_visitors'];
+}
+$visitorLabels = [];
+$visitorPoints = [];
+for ($i = 29; $i >= 0; $i--) {
+    $dateStr = date('Y-m-d', strtotime("-$i days"));
+    $visitorLabels[] = date('d M', strtotime($dateStr));
+    $visitorPoints[] = $indexedVisitors[$dateStr] ?? 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -43,10 +57,12 @@ $recentOrders = db()->fetchAll("SELECT o.*, u.username, p.name as product_name F
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php">👥 Pengguna</a>
+        <a href="<?= APP_URL ?>/admin/tinjau-seller.php">🔍 Tinjau Seller</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
         <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
+        <a href="<?= APP_URL ?>/admin/backup.php">🗄️ Backup Database</a>
     </aside>
 
     <!-- CONTENT -->
@@ -105,6 +121,18 @@ $recentOrders = db()->fetchAll("SELECT o.*, u.username, p.name as product_name F
             <a href="<?= APP_URL ?>/admin/orders.php?status=pending" class="btn btn-secondary">⏳ Order Pending</a>
         </div>
 
+        <!-- VISITOR CHART -->
+        <div class="card" style="margin-bottom:30px;">
+            <div class="card-body">
+                <h3 style="font-family:var(--font-head); font-size:18px; font-weight:700; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+                    📈 Grafik Pengunjung Unik (30 Hari Terakhir)
+                </h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="adminVisitorChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- RECENT ORDERS -->
         <div class="card">
             <div class="card-body">
@@ -150,5 +178,73 @@ $recentOrders = db()->fetchAll("SELECT o.*, u.username, p.name as product_name F
         </div>
     </div>
 </div>
+
+<!-- Load Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('adminVisitorChart').getContext('2d');
+    
+    // Create gradient
+    const visitorGradient = ctx.createLinearGradient(0, 0, 0, 250);
+    visitorGradient.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
+    visitorGradient.addColorStop(1, 'rgba(0, 229, 255, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($visitorLabels) ?>,
+            datasets: [{
+                label: 'Pengunjung Unik (IP)',
+                data: <?= json_encode($visitorPoints) ?>,
+                borderColor: '#00e5ff',
+                backgroundColor: visitorGradient,
+                borderWidth: 3,
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#00e5ff',
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' Pengunjung Unik';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)'
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.06)'
+                    },
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    min: 0
+                }
+            }
+        }
+    });
+});
+</script>
 </body>
 </html>

@@ -11,13 +11,13 @@ $order = db()->fetchOne(
      FROM orders o 
      JOIN products p ON o.product_id = p.id
      JOIN users u ON o.seller_id = u.id
-     WHERE o.id = ? AND o.buyer_id = ?",
-    'ii', $id, $_SESSION['user_id']
+     WHERE o.id = ? AND (o.buyer_id = ? OR o.seller_id = ?)",
+    'iii', $id, $_SESSION['user_id'], $_SESSION['user_id']
 );
 
 if (!$order) {
     setFlash('error', 'Pesanan tidak ditemukan.');
-    redirect(APP_URL . '/pages/orders.php');
+    redirect(APP_URL . '/pages/dashboard.php');
 }
 
 $payment = db()->fetchOne("SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC LIMIT 1", 'i', $id);
@@ -46,13 +46,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_review'])) {
     }
 }
 
+// Handle kirim pesanan (seller POV)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ship_order'])) {
+    if ($order['status'] === 'processing' && $_SESSION['user_id'] == $order['seller_id']) {
+        db()->execute("UPDATE orders SET status = 'shipped' WHERE id = ?", 'i', $id);
+        sendNotification($order['buyer_id'], 'Pesanan Dikirim 🚚', "Pesanan #{$order['order_number']} telah dikirim oleh seller. Silakan konfirmasi terima barang jika sudah diterima.", 'info', APP_URL . '/pages/order-detail.php?id=' . $id);
+        setFlash('success', 'Pesanan berhasil dikonfirmasi sebagai telah dikirim! 🚚');
+        redirect(currentUrl());
+    }
+}
+
 // Handle selesaikan pesanan
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_order'])) {
-    if ($order['status'] === 'processing') {
-        db()->execute("UPDATE orders SET status = 'completed', completed_at = NOW() WHERE id = ?", 'i', $id);
-        // Transfer dana ke seller
+    if ($order['status'] === 'shipped' && $_SESSION['user_id'] == $order['buyer_id']) {
         $sellerAmount = $order['total_price'] - $order['platform_fee'];
-        db()->execute("UPDATE users SET balance = balance + ? WHERE id = ?", 'di', $sellerAmount, $order['seller_id']);
+        
+        // Hold funds in escrow for 1 minute
+        db()->execute(
+            "UPDATE orders SET status = 'completed', completed_at = NOW(), escrow_amount = ?, escrow_release_at = DATE_ADD(NOW(), INTERVAL 1 MINUTE), escrow_status = 'held' WHERE id = ?", 
+            'di', $sellerAmount, $id
+        );
         
         // Ambil data detail Pembeli dan Penjual
         $buyer = db()->fetchOne("SELECT email, username, full_name FROM users WHERE id = ?", 'i', $order['buyer_id']);
@@ -60,14 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_order'])) {
 
         if ($seller) {
             $sellerName = htmlspecialchars($seller['full_name'] ?: $seller['username']);
-            $sellerSubject = "Pesanan Selesai & Dana Cair #" . $order['order_number'] . " - " . APP_NAME . " 💰";
+            $sellerSubject = "Pesanan Selesai (Menunggu Dana Cair) #" . $order['order_number'] . " - " . APP_NAME . " 💰";
             $sellerBody = "
-                <h2 class='email-title'>Pesanan Selesai & Saldo Cair! 💰</h2>
+                <h2 class='email-title'>Pesanan Selesai! 💰</h2>
                 <p>Halo Penjual <strong>" . $sellerName . "</strong>,</p>
                 <p>Pesanan dengan nomor <strong>#" . htmlspecialchars($order['order_number']) . "</strong> telah dikonfirmasi selesai oleh pembeli.</p>
-                <p>Dana bersih sebesar <strong>" . rupiah($sellerAmount) . "</strong> telah berhasil ditambahkan ke saldo akun " . htmlspecialchars(APP_NAME) . " Anda.</p>
+                <p>Dana bersih sebesar <strong>" . rupiah($sellerAmount) . "</strong> sedang ditahan di admin selama 1 menit sebagai jaminan transaksi sebelum diteruskan ke saldo akun " . htmlspecialchars(APP_NAME) . " Anda.</p>
                 <div class='divider'></div>
-                <h3 style='color: #ffffff;'>Rincian Saldo Masuk:</h3>
+                <h3 style='color: #ffffff;'>Rincian Saldo Penahanan:</h3>
                 <table class='detail-table'>
                     <tr>
                         <th>No. Pesanan</th>
@@ -78,12 +91,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_order'])) {
                         <td>" . htmlspecialchars($order['product_name']) . " (x" . $order['quantity'] . ")</td>
                     </tr>
                     <tr style='font-weight: bold; color: #f59e0b;'>
-                        <th>Dana Diterima</th>
+                        <th>Dana Ditahan (Escrow)</th>
                         <td><span class='text-highlight'>" . rupiah($sellerAmount) . "</span></td>
                     </tr>
                 </table>
                 <div style='text-align: center; margin-top: 30px;'>
-                    <a href='" . APP_URL . "/pages/dashboard.php' class='btn btn-accent'>💰 Lihat Saldo Akun</a>
+                    <a href='" . APP_URL . "/pages/seller-dashboard.php' class='btn btn-accent'>💰 Masuk Dashboard</a>
                 </div>
             ";
             sendEmail($seller['email'], $sellerSubject, $sellerBody);
@@ -120,8 +133,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_order'])) {
             sendEmail($buyer['email'], $buyerSubject, $buyerBody);
         }
 
-        sendNotification($order['seller_id'], 'Pesanan Selesai! 💰', "Pesanan #{$order['order_number']} telah selesai. Dana telah ditransfer.", 'success');
-        setFlash('success', 'Pesanan telah diselesaikan! Dana seller telah ditransfer. 🎉');
+        sendNotification($order['seller_id'], 'Pesanan Selesai (Dana Ditahan) 💰', "Pesanan #{$order['order_number']} telah selesai. Dana " . rupiah($sellerAmount) . " sedang ditahan di admin selama 1 menit.", 'info');
+        setFlash('success', 'Pesanan telah diselesaikan! Dana seller ditahan selama 1 menit sebelum cair. 🎉');
         redirect(currentUrl());
     }
 }
@@ -137,15 +150,15 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- STATUS TIMELINE -->
     <?php
-    $steps = ['pending' => 1, 'paid' => 2, 'processing' => 3, 'completed' => 4];
+    $steps = ['pending' => 1, 'processing' => 2, 'shipped' => 3, 'completed' => 4];
     $currentStep = $steps[$order['status']] ?? 1;
     ?>
     <div class="card" style="margin-bottom:20px;">
         <div class="card-body">
             <div style="display:flex;justify-content:space-between;align-items:center;position:relative;">
                 <div style="position:absolute;top:20px;left:10%;right:10%;height:2px;background:var(--border);z-index:0;"></div>
-                <?php foreach (['Menunggu'=>'⏳','Dibayar'=>'💳','Diproses'=>'⚙️','Selesai'=>'✅'] as $label => $icon): ?>
-                <?php $i = array_search($label, array_keys(['Menunggu'=>1,'Dibayar'=>2,'Diproses'=>3,'Selesai'=>4])) + 1; ?>
+                <?php foreach (['Menunggu'=>'⏳','Diproses'=>'⚙️','Dikirim'=>'🚚','Selesai'=>'✅'] as $label => $icon): ?>
+                <?php $i = array_search($label, array_keys(['Menunggu'=>1,'Diproses'=>2,'Dikirim'=>3,'Selesai'=>4])) + 1; ?>
                 <div style="text-align:center;position:relative;z-index:1;">
                     <div style="width:40px;height:40px;border-radius:50%;background:<?= $currentStep >= $i ? 'var(--primary)' : 'var(--bg-card2)' ?>;border:2px solid <?= $currentStep >= $i ? 'var(--primary)' : 'var(--border)' ?>;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 8px;">
                         <?= $icon ?>
@@ -181,20 +194,86 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
-    <!-- AKSI -->
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <?php if ($order['payment_status'] === 'unpaid'): ?>
-        <a href="<?= APP_URL ?>/pages/payment.php?order_id=<?= $order['id'] ?>&method=<?= $order['payment_method'] ?>" class="btn btn-primary">💳 Bayar Sekarang</a>
-        <?php endif; ?>
-        <?php if ($order['status'] === 'processing'): ?>
-        <form method="POST" style="display:inline;">
-            <?= csrfInput() ?>
-            <button type="button" name="complete_order" value="1" class="btn btn-success" data-confirm="Konfirmasi pesanan sudah diterima?">
-                ✅ Pesanan Diterima
-            </button>
-        </form>
+    <!-- AKSI & ESCROW STATUS -->
+    <div style="margin-bottom:20px;">
+        <?php if ($_SESSION['user_id'] == $order['buyer_id']): ?>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <?php if ($order['payment_status'] === 'unpaid'): ?>
+                    <a href="<?= APP_URL ?>/pages/payment.php?order_id=<?= $order['id'] ?>&method=<?= $order['payment_method'] ?>" class="btn btn-primary">💳 Bayar Sekarang</a>
+                <?php endif; ?>
+                
+                <?php if ($order['payment_status'] === 'paid' && $order['status'] === 'processing'): ?>
+                    <div style="background:rgba(255,170,0,0.06); border:1px solid rgba(255,170,0,0.15); border-radius:10px; padding:12px 18px; font-size:14px; color:var(--warning); display:flex; align-items:center; gap:8px; width:100%;">
+                        <span>⏳</span>
+                        <span>Pesanan sedang diproses. Menunggu penjual mengirimkan pesanan Anda.</span>
+                    </div>
+                <?php elseif ($order['status'] === 'shipped'): ?>
+                    <form method="POST" style="display:inline;">
+                        <?= csrfInput() ?>
+                        <button type="button" name="complete_order" value="1" class="btn btn-success" data-confirm="Konfirmasi pesanan sudah Anda terima dengan baik? Dana akan diteruskan ke penjual (ditahan 1 menit).">
+                            ✅ Pesanan Diterima
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php elseif ($_SESSION['user_id'] == $order['seller_id']): ?>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                <?php if ($order['status'] === 'processing'): ?>
+                    <form method="POST" style="display:inline;">
+                        <?= csrfInput() ?>
+                        <button type="button" name="ship_order" value="1" class="btn btn-primary" data-confirm="Konfirmasi bahwa Anda sudah mengirimkan pesanan ke pembeli?">
+                            🚚 Konfirmasi Pesanan Dikirim
+                        </button>
+                    </form>
+                <?php elseif ($order['status'] === 'shipped'): ?>
+                    <div style="background:rgba(0,102,255,0.06); border:1px solid rgba(0,102,255,0.15); border-radius:10px; padding:12px 18px; font-size:14px; color:var(--accent); display:flex; align-items:center; gap:8px; width:100%;">
+                        <span>⏳</span>
+                        <span>Pesanan telah Anda kirim. Menunggu pembeli melakukan konfirmasi penerimaan barang.</span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($order['escrow_status'] === 'held'): ?>
+                    <div style="width:100%; margin-top:10px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2); border-radius:10px; padding:16px;">
+                        <h4 style="font-family:var(--font-head); color:var(--gold); margin-bottom:6px; display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700;">
+                            💰 Dana Ditahan Sementara (Escrow)
+                        </h4>
+                        <p style="font-size:13px; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.5;">
+                            Sesuai ketentuan perantara platform, dana bersih penjualan sebesar <strong><?= rupiah($order['escrow_amount']) ?></strong> disimpan di akun admin selama 1 menit sebagai jaminan transaksi.
+                        </p>
+                        <div id="escrowCountdown" style="font-size:13px; font-weight:700; color:var(--gold);" data-time="<?= strtotime($order['escrow_release_at']) ?>">
+                            Pelepasan dana dalam: Loading...
+                        </div>
+                    </div>
+                <?php elseif ($order['escrow_status'] === 'released'): ?>
+                    <div style="width:100%; margin-top:10px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:10px; padding:14px; font-size:13px; color:#10b981; display:flex; align-items:center; gap:8px;">
+                        <span>✅</span>
+                        <span>Dana penjualan sebesar <strong><?= rupiah($order['escrow_amount']) ?></strong> telah dicairkan ke Saldo Utama Anda.</span>
+                    </div>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const el = document.getElementById('escrowCountdown');
+        if (el) {
+            const releaseTime = parseInt(el.getAttribute('data-time')) * 1000;
+            const interval = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = releaseTime - now;
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    el.innerHTML = "🎉 Dana telah dilepaskan! Silakan refresh halaman untuk memperbarui saldo.";
+                    el.style.color = "#10b981";
+                } else {
+                    const sec = Math.ceil(diff / 1000);
+                    el.innerHTML = `Pelepasan dana dalam: ${sec} detik`;
+                }
+            }, 1000);
+        }
+    });
+    </script>
 
     <!-- ULASAN -->
     <?php if ($order['status'] === 'completed'): ?>
@@ -207,7 +286,7 @@ require_once __DIR__ . '/../includes/header.php';
                 <p style="color:var(--text-secondary);"><?= htmlspecialchars($review['comment']) ?></p>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:8px;"><?= timeAgo($review['created_at']) ?></div>
             </div>
-            <?php else: ?>
+            <?php elseif ($_SESSION['user_id'] == $order['buyer_id']): ?>
             <form method="POST">
                 <?= csrfInput() ?>
                 <div class="form-group">
@@ -235,6 +314,8 @@ require_once __DIR__ . '/../includes/header.php';
                 });
             });
             </script>
+            <?php else: ?>
+            <p style="color:var(--text-muted); font-size:14px; font-style:italic; margin:0;">Belum ada ulasan dari pembeli.</p>
             <?php endif; ?>
         </div>
     </div>

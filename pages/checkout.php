@@ -32,6 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(currentUrl());
     }
 
+    if ($paymentMethod === 'Saldo') {
+        if ($user['balance'] < $total) {
+            setFlash('error', 'Saldo Anda tidak mencukupi untuk melakukan transaksi ini.');
+            redirect(currentUrl());
+        }
+    }
+
     // Buat order
     $orderNumber = generateOrderNumber();
     $orderId = db()->insert(
@@ -116,6 +123,7 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="payment-methods-select">
                             <?php
                             $methods = [
+                                ['id' => 'Saldo', 'icon' => '💰', 'name' => 'Saldo Utama (' . rupiah($user['balance']) . ')'],
                                 ['id' => 'QRIS', 'icon' => '📱', 'name' => 'QRIS'],
                                 ['id' => 'BCA', 'icon' => '🏦', 'name' => 'BCA'],
                                 ['id' => 'Mandiri', 'icon' => '🏦', 'name' => 'Mandiri'],

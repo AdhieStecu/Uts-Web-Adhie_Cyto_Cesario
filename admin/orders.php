@@ -77,10 +77,12 @@ if ($action === 'view' && $id) {
         <a href="<?= APP_URL ?>/admin/categories.php">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php" class="active">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php">👥 Pengguna</a>
+        <a href="<?= APP_URL ?>/admin/tinjau-seller.php">🔍 Tinjau Seller</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
         <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
+        <a href="<?= APP_URL ?>/admin/backup.php">🗄️ Backup Database</a>
     </aside>
     <div class="admin-content">
         <?php showFlash(); ?>
@@ -130,6 +132,7 @@ if ($action === 'view' && $id) {
                             <select name="status" class="form-control">
                                 <option value="pending" <?= $viewOrder['status']==='pending'?'selected':'' ?>>⏳ Pending</option>
                                 <option value="processing" <?= $viewOrder['status']==='processing'?'selected':'' ?>>⚙️ Diproses</option>
+                                <option value="shipped" <?= $viewOrder['status']==='shipped'?'selected':'' ?>>🚚 Dikirim</option>
                                 <option value="completed" <?= $viewOrder['status']==='completed'?'selected':'' ?>>✅ Selesai</option>
                                 <option value="cancelled" <?= $viewOrder['status']==='cancelled'?'selected':'' ?>>❌ Dibatalkan</option>
                                 <option value="refunded" <?= $viewOrder['status']==='refunded'?'selected':'' ?>>💸 Refund</option>
@@ -151,7 +154,7 @@ if ($action === 'view' && $id) {
         <!-- FILTER STATUS & EXPORT -->
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <?php foreach ([''=>'Semua','pending'=>'Pending','processing'=>'Diproses','completed'=>'Selesai','cancelled'=>'Dibatalkan'] as $s => $label): ?>
+                <?php foreach ([''=>'Semua','pending'=>'Pending','processing'=>'Diproses','shipped'=>'Dikirim','completed'=>'Selesai','cancelled'=>'Dibatalkan'] as $s => $label): ?>
                 <a href="?status=<?= $s ?>" class="btn <?= $status===$s?'btn-primary':'btn-outline' ?> btn-sm"><?= $label ?></a>
                 <?php endforeach; ?>
             </div>

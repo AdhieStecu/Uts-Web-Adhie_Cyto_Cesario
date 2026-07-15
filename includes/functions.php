@@ -668,3 +668,92 @@ function sendEmail($to, $subject, $body, $altBody = '', $debug = false) {
         return false;
     }
 }
+
+// ---- VISITOR LOGGING ----
+function logVisitor() {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = trim(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
+    } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    }
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $today = date('Y-m-d');
+    
+    db()->query("INSERT IGNORE INTO visitor_logs (ip_address, user_agent, visited_date) VALUES (?, ?, ?)", 'sss', $ip, $userAgent, $today);
+}
+
+// ---- ESCROW PAYOUTS PROCESSOR ----
+function processEscrowPayouts() {
+    $now = date('Y-m-d H:i:s');
+    $payouts = db()->fetchAll(
+        "SELECT id, seller_id, order_number, escrow_amount 
+         FROM orders 
+         WHERE escrow_status = 'held' AND escrow_release_at <= ?",
+        's', $now
+    );
+
+    foreach ($payouts as $pay) {
+        db()->execute("UPDATE users SET balance = balance + ? WHERE id = ?", 'di', $pay['escrow_amount'], $pay['seller_id']);
+        db()->execute("UPDATE orders SET escrow_status = 'released' WHERE id = ?", 'i', $pay['id']);
+        sendNotification(
+            $pay['seller_id'], 
+            'Dana Dilepas 💰', 
+            "Dana " . rupiah($pay['escrow_amount']) . " dari order #{$pay['order_number']} telah dilepas ke saldo Anda setelah penahanan 1 menit.", 
+            'success',
+            APP_URL . '/pages/seller-dashboard.php'
+        );
+    }
+}
+
+// Auto execute escrow processing
+processEscrowPayouts();
+
+// ---- OTP HELPER FUNCTIONS ----
+function generateOTP() {
+    return sprintf("%06d", mt_rand(0, 999999));
+}
+
+function storeOTP($email, $otp, $type) {
+    db()->execute("DELETE FROM email_otps WHERE email = ? AND type = ?", 'ss', $email, $type);
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+    db()->insert(
+        "INSERT INTO email_otps (email, otp_code, type, expires_at) VALUES (?, ?, ?, ?)",
+        'ssss', $email, $otp, $type, $expiresAt
+    );
+}
+
+function verifyOTPCode($email, $otp, $type) {
+    $now = date('Y-m-d H:i:s');
+    $match = db()->fetchOne(
+        "SELECT id FROM email_otps WHERE email = ? AND otp_code = ? AND type = ? AND expires_at > ? LIMIT 1",
+        'ssss', $email, $otp, $type, $now
+    );
+    if ($match) {
+        db()->execute("DELETE FROM email_otps WHERE email = ? AND type = ?", 'ss', $email, $type);
+        return true;
+    }
+    return false;
+}
+
+function sendOtpEmail($email, $otp, $type) {
+    $typeName = $type === 'register' ? 'Verifikasi Pendaftaran Akun' : 'Reset Kata Sandi';
+    $subject = "Kode OTP " . $typeName . " - " . APP_NAME . " 🔑";
+    
+    $body = "
+        <h2 class='email-title'>Kode Keamanan OTP 🔑</h2>
+        <p>Halo,</p>
+        <p>Kami menerima permintaan untuk <strong>" . $typeName . "</strong> akun Anda di " . htmlspecialchars(APP_NAME) . ".</p>
+        <p>Gunakan kode OTP berikut untuk melanjutkan verifikasi Anda:</p>
+        
+        <div style='background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; text-align: center; margin: 25px 0;'>
+            <span style='font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #0066ff; font-family: monospace;'>" . htmlspecialchars($otp) . "</span>
+        </div>
+        
+        <p style='color: #94a3b8; font-size: 13px;'>Kode OTP ini berlaku selama <strong>15 menit</strong>. Jangan pernah membagikan kode OTP ini kepada siapapun demi keamanan akun Anda.</p>
+        <p style='margin-top: 30px; font-size: 13px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 15px;'>
+            Jika Anda tidak merasa meminta kode ini, silakan abaikan email ini.
+        </p>
+    ";
+    return sendEmail($email, $subject, $body);
+}

@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="password" name="password" class="form-control" placeholder="Masukkan password" required>
             </div>
             <div style="text-align:right;margin-bottom:20px;">
-                <a href="#" style="font-size:14px;color:var(--accent);">Lupa Password?</a>
+                <a href="<?= APP_URL ?>/pages/forgot-password.php" style="font-size:14px;color:var(--accent);">Lupa Password?</a>
             </div>
             <button type="submit" class="btn btn-primary btn-block btn-lg">🚀 Masuk Sekarang</button>
         </form>

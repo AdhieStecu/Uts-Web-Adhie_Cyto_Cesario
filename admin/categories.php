@@ -70,10 +70,12 @@ $categories = db()->fetchAll("SELECT *, (SELECT COUNT(*) FROM products WHERE cat
         <a href="<?= APP_URL ?>/admin/categories.php" class="active">📂 Kategori</a>
         <a href="<?= APP_URL ?>/admin/orders.php">📦 Pesanan</a>
         <a href="<?= APP_URL ?>/admin/users.php">👥 Pengguna</a>
+        <a href="<?= APP_URL ?>/admin/tinjau-seller.php">🔍 Tinjau Seller</a>
         <a href="<?= APP_URL ?>/admin/payments.php">💳 Pembayaran</a>
         <a href="<?= APP_URL ?>/admin/withdrawals.php">💸 Penarikan</a>
         <a href="<?= APP_URL ?>/admin/reviews.php">⭐ Ulasan</a>
         <a href="<?= APP_URL ?>/admin/test-smtp.php">📧 Test SMTP</a>
+        <a href="<?= APP_URL ?>/admin/backup.php">🗄️ Backup Database</a>
     </aside>
     <div class="admin-content">
         <?php showFlash(); ?>
