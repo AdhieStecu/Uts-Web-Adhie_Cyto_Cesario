@@ -19,6 +19,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         if ($user && password_verify($password, $user['password'])) {
+            if ($user['is_verified'] == 0) {
+                $otp = generateOTP();
+                storeOTP($user['email'], $otp, 'register');
+                sendOtpEmail($user['email'], $otp, 'register');
+                
+                setFlash('info', 'Akun Anda belum terverifikasi. Kami telah mengirimkan kode OTP baru ke email Anda.');
+                redirect(APP_URL . '/pages/verify-otp.php?email=' . urlencode($user['email']) . '&type=register');
+            }
+
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];

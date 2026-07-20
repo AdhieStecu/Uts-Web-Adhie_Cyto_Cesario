@@ -22,40 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = db()->fetchOne("SELECT * FROM users WHERE email = ? LIMIT 1", 's', $email);
 
             if ($user) {
-                // Delete previous tokens for this email
-                db()->execute("DELETE FROM password_resets WHERE email = ?", 's', $email);
-
-                // Generate secure random token
-                $token = bin2hex(random_bytes(32));
-                $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-                // Save token to DB
-                db()->insert(
-                    "INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)",
-                    'sss', $email, $token, $expiresAt
-                );
-
-                // Send Reset Link Email
-                $resetLink = APP_URL . "/pages/reset-password.php?token=" . $token;
-                $subject = "Reset Kata Sandi Anda - " . APP_NAME . " ⚡";
+                // Generate and send OTP
+                $otp = generateOTP();
+                storeOTP($email, $otp, 'forgot_password');
                 
-                $emailContent = "
-                    <p>Halo <strong>" . htmlspecialchars($user['full_name'] ?: $user['username']) . "</strong>,</p>
-                    <p>Kami menerima permintaan untuk mereset kata sandi akun Anda di <strong>" . htmlspecialchars(APP_NAME) . "</strong>.</p>
-                    <p>Silakan klik tombol di bawah ini untuk mereset kata sandi Anda. Tautan ini akan kedaluwarsa dalam 1 jam.</p>
-                    <div style='text-align:center; margin: 30px 0;'>
-                        <a href='" . htmlspecialchars($resetLink) . "' class='btn btn-accent' style='display:inline-block; padding:12px 24px; background-color:#f59e0b; color:#0f172a !important; text-decoration:none; font-weight:600; border-radius:6px;'>🔑 Reset Kata Sandi</a>
-                    </div>
-                    <div class='divider'></div>
-                    <p style='font-size:12px; color:#64748b;'>Jika tombol di atas tidak berfungsi, salin dan tempel tautan berikut ke browser Anda:</p>
-                    <p style='font-size:11px; color:#3b82f6; word-break:break-all;'><a href='" . htmlspecialchars($resetLink) . "' style='color:#3b82f6;'>" . htmlspecialchars($resetLink) . "</a></p>
-                    <p style='font-size:12px; color:#64748b; margin-top:20px;'>Jika Anda tidak meminta pengaturan ulang ini, Anda dapat mengabaikan email ini dengan aman.</p>
-                ";
-
-                if (sendEmail($email, $subject, $emailContent)) {
-                    $success = 'Instruksi reset password telah dikirim ke email Anda! Silakan periksa inbox atau spam. 📧';
+                if (sendOtpEmail($email, $otp, 'forgot_password')) {
+                    setFlash('info', 'Kode OTP reset password telah dikirim ke email Anda! Silakan periksa inbox.');
+                    redirect(APP_URL . '/pages/verify-otp.php?email=' . urlencode($email) . '&type=forgot_password');
                 } else {
-                    $error = 'Gagal mengirim email reset password. Pastikan konfigurasi SMTP di server Anda benar.';
+                    $error = 'Gagal mengirim email OTP reset password. Pastikan konfigurasi SMTP di server Anda benar.';
                 }
             } else {
                 $error = 'Alamat email tidak terdaftar di sistem kami.';
@@ -90,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </div>
         <h1 class="auth-title">Lupa Password? 🔑</h1>
-        <p class="auth-sub">Masukkan email terdaftar Anda untuk menerima tautan pengaturan ulang kata sandi</p>
+        <p class="auth-sub">Masukkan email terdaftar Anda untuk menerima kode OTP verifikasi pengaturan ulang kata sandi</p>
 
         <?php if ($error): ?>
             <div class="flash-message flash-error"><?= htmlspecialchars($error) ?></div>
@@ -107,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input type="email" name="email" class="form-control" placeholder="contoh@email.com" required 
                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
             </div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px;">✉️ Kirim Tautan Reset</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px;">✉️ Kirim Kode OTP</button>
         </form>
 
         <p style="text-align:center;font-size:14px;color:var(--text-muted);">

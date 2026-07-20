@@ -32,39 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $hashedPass = password_hash($password, PASSWORD_DEFAULT);
                 $userId = db()->insert(
-                    "INSERT INTO users (username, email, password, full_name, is_verified) VALUES (?, ?, ?, ?, 1)",
+                    "INSERT INTO users (username, email, password, full_name, is_verified) VALUES (?, ?, ?, ?, 0)",
                     'ssss', $username, $email, $hashedPass, $fullName
                 );
                 if ($userId) {
-                    // Auto login setelah register
-                    $_SESSION['user_id'] = $userId;
-                    $_SESSION['username'] = $username;
-                    $_SESSION['role'] = 'user';
-                    
-                    // Kirim Email Selamat Datang (Welcome Email)
-                    $emailSubject = "Selamat Datang di " . APP_NAME . "! 🎮";
-                    $emailBody = "
-                        <h2 class='email-title'>Selamat Datang, " . htmlspecialchars($fullName ?: $username) . "! 👋</h2>
-                        <p>Terima kasih telah bergabung di <strong>" . htmlspecialchars(APP_NAME) . "</strong>, marketplace voucher game terpercaya di Indonesia.</p>
-                        <p>Akun Anda dengan username <strong>" . htmlspecialchars($username) . "</strong> telah berhasil didaftarkan.</p>
-                        <p>Sekarang Anda dapat melakukan transaksi dengan cepat, murah, dan aman:</p>
-                        <ul>
-                            <li>Top Up Diamond Mobile Legends, Free Fire, dll.</li>
-                            <li>Beli Voucher Steam, Google Play, Roblox Robux, dll.</li>
-                            <li>Proses otomatis dan layanan pelanggan 24/7.</li>
-                        </ul>
-                        <div style='text-align: center; margin-top: 30px;'>
-                            <a href='" . APP_URL . "' class='btn btn-accent'>🎮 Mulai Belanja Sekarang</a>
-                        </div>
-                        <p style='margin-top: 30px; font-size: 13px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 15px;'>
-                            Jika Anda tidak merasa mendaftar di website kami, silakan abaikan email ini.
-                        </p>
-                    ";
-                    sendEmail($email, $emailSubject, $emailBody);
+                    // Generate and send OTP
+                    $otp = generateOTP();
+                    storeOTP($email, $otp, 'register');
+                    sendOtpEmail($email, $otp, 'register');
 
-                    sendNotification($userId, 'Selamat Datang! 🎉', 'Akun kamu berhasil dibuat. Selamat berbelanja!', 'success');
-                    setFlash('success', 'Akun berhasil dibuat! Selamat belanja di BoloTopup.ID 🎮');
-                    redirect(APP_URL . '/pages/dashboard.php');
+                    setFlash('info', 'Registrasi sukses! Silakan masukkan kode OTP yang telah dikirimkan ke email Anda untuk mengaktifkan akun.');
+                    redirect(APP_URL . '/pages/verify-otp.php?email=' . urlencode($email) . '&type=register');
                 } else {
                     $error = 'Gagal membuat akun. Coba lagi.';
                 }

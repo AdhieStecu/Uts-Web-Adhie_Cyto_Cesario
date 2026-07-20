@@ -7,51 +7,37 @@ if (isLoggedIn()) redirect(APP_URL . '/pages/dashboard.php');
 
 $error = '';
 $success = '';
-$token = sanitize($_GET['token'] ?? '');
+$email = $_SESSION['otp_verified_email'] ?? '';
 
-if (empty($token)) {
-    $error = 'Token reset password tidak valid atau tidak ditemukan.';
+if (empty($email)) {
+    $error = 'Sesi verifikasi OTP reset password tidak ditemukan atau sudah kadaluwarsa.';
 } else {
-    // Check if token exists and is not expired
-    $now = date('Y-m-d H:i:s');
-    $resetReq = db()->fetchOne(
-        "SELECT * FROM password_resets WHERE token = ? AND expires_at > ? LIMIT 1",
-        'ss', $token, $now
-    );
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+            $error = 'Token tidak valid. Coba lagi.';
+        } else {
+            $password = $_POST['password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if (!$resetReq) {
-        $error = 'Tautan reset password ini tidak valid, salah, atau telah kedaluwarsa. Silakan ajukan ulang kembali.';
-    } else {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
-                $error = 'Token tidak valid. Coba lagi.';
+            if (strlen($password) < 6) {
+                $error = 'Kata sandi baru minimal harus terdiri dari 6 karakter.';
+            } elseif ($password !== $confirmPassword) {
+                $error = 'Konfirmasi kata sandi baru tidak cocok.';
             } else {
-                $password = $_POST['password'] ?? '';
-                $confirmPassword = $_POST['confirm_password'] ?? '';
+                // Update user password in DB
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-                if (strlen($password) < 6) {
-                    $error = 'Kata sandi baru minimal harus terdiri dari 6 karakter.';
-                } elseif ($password !== $confirmPassword) {
-                    $error = 'Konfirmasi kata sandi baru tidak cocok.';
+                $updateStatus = db()->execute(
+                    "UPDATE users SET password = ? WHERE email = ?",
+                    'ss', $hashedPassword, $email
+                );
+
+                if ($updateStatus !== false) {
+                    unset($_SESSION['otp_verified_email']);
+                    setFlash('success', 'Kata sandi Anda berhasil diperbarui! Silakan masuk kembali. 🎉');
+                    redirect(APP_URL . '/pages/login.php');
                 } else {
-                    // Update user password in DB
-                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                    $email = $resetReq['email'];
-
-                    $updateStatus = db()->execute(
-                        "UPDATE users SET password = ? WHERE email = ?",
-                        'ss', $hashedPassword, $email
-                    );
-
-                    if ($updateStatus !== false) {
-                        // Delete token from database
-                        db()->execute("DELETE FROM password_resets WHERE email = ?", 's', $email);
-                        
-                        setFlash('success', 'Kata sandi Anda berhasil diperbarui! Silakan masuk kembali. 🎉');
-                        redirect(APP_URL . '/pages/login.php');
-                    } else {
-                        $error = 'Gagal memperbarui kata sandi. Silakan coba kembali beberapa saat lagi.';
-                    }
+                    $error = 'Gagal memperbarui kata sandi. Silakan coba kembali beberapa saat lagi.';
                 }
             }
         }
@@ -86,10 +72,10 @@ if (empty($token)) {
         <h1 class="auth-title">Reset Password 🔐</h1>
         <p class="auth-sub">Masukkan kata sandi baru untuk akun Anda</p>
 
-        <?php if ($error && !$resetReq): ?>
+        <?php if ($error && empty($email)): ?>
             <div class="flash-message flash-error" style="margin-bottom:20px;"><?= htmlspecialchars($error) ?></div>
-            <a href="<?= APP_URL ?>/pages/forgot-password.php" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px; text-decoration:none; text-align:center;">
-                🔑 Kirim Ulang Tautan Reset
+            <a href="<?= APP_URL ?>/pages/forgot-password.php" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px; text-decoration:none; text-align:center; justify-content:center;">
+                🔑 Ajukan Lupa Password
             </a>
         <?php else: ?>
             
@@ -107,7 +93,7 @@ if (empty($token)) {
                     <label class="form-label">Konfirmasi Password Baru</label>
                     <input type="password" name="confirm_password" class="form-control" placeholder="Ulangi kata sandi baru" required>
                 </div>
-                <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px;">🔒 Simpan Kata Sandi</button>
+                <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-bottom:20px; justify-content:center;">🔒 Simpan Kata Sandi</button>
             </form>
         <?php endif; ?>
 
