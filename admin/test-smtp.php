@@ -1,7 +1,7 @@
 <?php
 // File: admin/test-smtp.php
 $pageTitle = 'Uji Coba SMTP';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 $error = '';

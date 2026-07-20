@@ -1,7 +1,7 @@
 <?php
 // File: pages/search.php
 $pageTitle = 'Cari Produk';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 
 $q       = sanitize($_GET['q'] ?? '');
 $catSlug = sanitize($_GET['cat'] ?? '');
@@ -44,7 +44,7 @@ $products = db()->fetchAll(
 );
 
 $categories = db()->fetchAll("SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order");
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:30px;padding-bottom:60px;">
@@ -124,4 +124,4 @@ require_once __DIR__ . '/../includes/header.php';
     <?php endif; ?>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

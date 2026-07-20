@@ -1,7 +1,7 @@
 <?php
 // File: pages/dashboard.php
 $pageTitle = 'Dashboard';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $user = currentUser();
@@ -15,7 +15,7 @@ $totalOrders = db()->fetchOne("SELECT COUNT(*) as cnt FROM orders WHERE buyer_id
 $completedOrders = db()->fetchOne("SELECT COUNT(*) as cnt FROM orders WHERE buyer_id = ? AND status = 'completed'", 'i', $_SESSION['user_id'])['cnt'];
 $totalSpend = db()->fetchOne("SELECT COALESCE(SUM(total_price),0) as total FROM orders WHERE buyer_id = ? AND payment_status = 'paid'", 'i', $_SESSION['user_id'])['total'];
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container">
@@ -23,7 +23,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- SIDEBAR -->
         <?php
         $activePage = 'dashboard';
-        require_once __DIR__ . '/../includes/sidebar.php';
+        require_once __DIR__ . '/../inc/sidebar.php';
         ?>
 
         <!-- MAIN CONTENT -->
@@ -114,4 +114,4 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

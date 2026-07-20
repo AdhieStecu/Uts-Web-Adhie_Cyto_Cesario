@@ -1,6 +1,6 @@
 <?php
 // File: admin/export_orders.php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;

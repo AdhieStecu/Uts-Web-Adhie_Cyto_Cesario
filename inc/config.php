@@ -1,7 +1,7 @@
 <?php
 // =============================================
 // KONFIGURASI DATABASE & APLIKASI
-// File: includes/config.php
+// File: inc/config.php
 // =============================================
 
 // Load environment variables from .env file
@@ -34,15 +34,33 @@ function loadEnv($path) {
 }
 loadEnv(__DIR__ . '/../.env');
 
-// Database Config
-define('DB_HOST', isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'localhost');
-define('DB_USER', isset($_ENV['DB_USER']) ? $_ENV['DB_USER'] : 'root');       // Ganti sesuai user MySQL kamu
-define('DB_PASS', isset($_ENV['DB_PASS']) ? $_ENV['DB_PASS'] : '');           // Ganti sesuai password MySQL kamu
-define('DB_NAME', isset($_ENV['DB_NAME']) ? $_ENV['DB_NAME'] : 'gamestore_db');
+// Database Config (DISESUAIKAN UNTUK INFINITYFREE)
+// Ganti teks di sebelah kanan sesuai dengan detail MySQL Databases di InfinityFree
+define('DB_HOST', isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'sql210.infinityfree.com');
+define('DB_PORT', isset($_ENV['DB_PORT']) ? (int)$_ENV['DB_PORT'] : 3306);
+define('DB_USER', isset($_ENV['DB_USER']) ? $_ENV['DB_USER'] : 'if0_42451397'); 
+define('DB_PASS', isset($_ENV['DB_PASS']) ? $_ENV['DB_PASS'] : 'Jumanji1324'); 
+define('DB_NAME', isset($_ENV['DB_NAME']) ? $_ENV['DB_NAME'] : 'if0_42451397_gamestore_db');
 
 // App Config
 define('APP_NAME', isset($_ENV['APP_NAME']) ? $_ENV['APP_NAME'] : 'BoloTopup.ID');
-define('APP_URL', isset($_ENV['APP_URL']) ? $_ENV['APP_URL'] : 'http://localhost/Uts-Web-Adhie_Cyto_Cesario');
+
+// Dynamic APP_URL detection
+$detectedUrl = 'http://localhost/Uts-Web-Adhie_Cyto_Cesario';
+if (isset($_SERVER['HTTP_HOST'])) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'];
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $dir = str_replace('\\', '/', dirname($scriptName));
+    if ($dir === '/') {
+        $dir = '';
+    }
+    // Remove folders like pages, admin, inc, assets, etc. to get the root directory path
+    $dir = preg_replace('/(\/(pages|admin|inc|vendor|assets))(\/.*)?$/i', '', $dir);
+    $detectedUrl = rtrim($protocol . $host . $dir, '/');
+}
+
+define('APP_URL', isset($_ENV['APP_URL']) && $_ENV['APP_URL'] !== '' ? $_ENV['APP_URL'] : $detectedUrl);
 define('APP_VERSION', '1.0.0');
 
 // Google SSO Config

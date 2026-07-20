@@ -1,7 +1,7 @@
 <?php
 // File: pages/notifications.php
 $pageTitle = 'Notifikasi';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 // Mark all as read
@@ -17,7 +17,7 @@ $notifs = db()->fetchAll(
 // Mark as read
 db()->execute("UPDATE notifications SET is_read = 1 WHERE user_id = ?", 'i', $_SESSION['user_id']);
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;max-width:700px;">
@@ -55,4 +55,4 @@ require_once __DIR__ . '/../includes/header.php';
     <?php endif; ?>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

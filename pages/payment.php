@@ -1,7 +1,7 @@
 <?php
 // File: pages/payment.php
 $pageTitle = 'Pembayaran';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $user = currentUser();
@@ -129,7 +129,7 @@ if ($method === 'qris' || $method === 'QRIS') {
     $qrisData = generateQRIS($order['total_price'], $order['order_number']);
 }
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;max-width:800px;">
@@ -320,4 +320,4 @@ if (timerEl) {
 }
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

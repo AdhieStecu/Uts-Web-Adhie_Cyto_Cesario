@@ -1,7 +1,7 @@
 <?php
 // File: admin/reviews.php
 $pageTitle = 'Kelola Ulasan';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 // Seed mock data if empty

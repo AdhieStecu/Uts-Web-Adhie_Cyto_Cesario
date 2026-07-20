@@ -3,7 +3,7 @@
 // HOMEPAGE - index.php (Redesigned Itemku-Style)
 // =============================================
 $pageTitle = 'Marketplace Game Terpercaya #1 Indonesia';
-require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/inc/functions.php';
 
 // Ambil produk featured
 $featuredProducts = db()->fetchAll(
@@ -72,7 +72,7 @@ $heroGames = [
     ],
 ];
 
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/inc/header.php';
 ?>
 
 <!-- HERO BANNER -->
@@ -297,4 +297,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
+<?php require_once __DIR__ . '/inc/footer.php'; ?>

@@ -1,6 +1,6 @@
 <?php
 // File: admin/payments.php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 $page = max(1, (int)($_GET['page'] ?? 1));

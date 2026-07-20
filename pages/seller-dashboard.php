@@ -1,7 +1,7 @@
 <?php
 // File: pages/seller-dashboard.php
 $pageTitle = 'Dashboard Penjual';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $user = currentUser();
@@ -75,7 +75,7 @@ for ($i = 29; $i >= 0; $i--) {
     }
 }
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px; padding-bottom:60px;">
@@ -83,7 +83,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- SIDEBAR -->
         <?php
         $activePage = 'seller-dashboard';
-        require_once __DIR__ . '/../includes/sidebar.php';
+        require_once __DIR__ . '/../inc/sidebar.php';
         ?>
 
         <!-- MAIN CONTENT -->
@@ -312,4 +312,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

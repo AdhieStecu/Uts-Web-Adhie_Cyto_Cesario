@@ -1,6 +1,6 @@
 <?php
 // File: admin/users.php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 // Toggle role/status

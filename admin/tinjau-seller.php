@@ -1,7 +1,7 @@
 <?php
 // File: admin/tinjau-seller.php
 $pageTitle = 'Tinjau Seller';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 $sellerId = (int)($_GET['seller_id'] ?? 0);

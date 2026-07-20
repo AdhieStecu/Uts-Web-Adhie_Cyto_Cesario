@@ -1,5 +1,5 @@
 <?php
-// File: includes/sidebar.php
+// File: inc/sidebar.php
 if (!isLoggedIn()) return;
 $user = currentUser();
 $activePage = isset($activePage) ? $activePage : '';

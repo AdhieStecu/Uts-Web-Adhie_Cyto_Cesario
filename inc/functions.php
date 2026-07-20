@@ -1,7 +1,7 @@
 <?php
 // =============================================
 // HELPER FUNCTIONS
-// File: includes/functions.php
+// File: inc/functions.php
 // =============================================
 
 // Polyfill for ZipArchive if php-zip extension is not installed/enabled

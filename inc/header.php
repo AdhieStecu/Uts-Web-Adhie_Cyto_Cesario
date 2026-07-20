@@ -1,5 +1,5 @@
 <?php
-// File: includes/header.php
+// File: inc/header.php
 require_once __DIR__ . '/functions.php';
 logVisitor();
 $cartCount = isLoggedIn() ? cartCount() : 0;

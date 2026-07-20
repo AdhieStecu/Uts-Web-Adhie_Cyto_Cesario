@@ -1,7 +1,7 @@
 <?php
 // File: pages/topup-balance.php
 $pageTitle = 'Top Up Saldo';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $user = currentUser();
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_topup'])) {
     }
 }
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px; padding-bottom:60px;">
@@ -96,7 +96,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- SIDEBAR -->
         <?php
         $activePage = 'topup'; // Sesuai sidebar
-        require_once __DIR__ . '/../includes/sidebar.php';
+        require_once __DIR__ . '/../inc/sidebar.php';
         ?>
 
         <!-- MAIN CONTENT -->
@@ -294,4 +294,4 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

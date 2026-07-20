@@ -1,7 +1,7 @@
 <?php
 // File: pages/orders.php
 $pageTitle = 'Pesanan Saya';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $status = sanitize($_GET['status'] ?? '');
@@ -26,7 +26,7 @@ $orders = db()->fetchAll(
     $types, ...$params
 );
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;">
@@ -34,7 +34,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- SIDEBAR -->
         <?php
         $activePage = 'orders';
-        require_once __DIR__ . '/../includes/sidebar.php';
+        require_once __DIR__ . '/../inc/sidebar.php';
         ?>
 
         <div>
@@ -99,4 +99,4 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

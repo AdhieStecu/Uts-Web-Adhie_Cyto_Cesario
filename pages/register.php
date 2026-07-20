@@ -1,7 +1,7 @@
 <?php
 // File: pages/register.php
 $pageTitle = 'Daftar';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 
 if (isLoggedIn()) redirect(APP_URL . '/pages/dashboard.php');
 

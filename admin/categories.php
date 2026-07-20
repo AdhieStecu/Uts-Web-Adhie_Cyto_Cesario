@@ -1,6 +1,6 @@
 <?php
 // File: admin/categories.php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 $action = sanitize($_GET['action'] ?? 'list');

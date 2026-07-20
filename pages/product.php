@@ -1,6 +1,6 @@
 <?php
 // File: pages/product.php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 
 $id = (int)($_GET['id'] ?? 0);
 $product = db()->fetchOne(
@@ -46,7 +46,7 @@ $reviews = db()->fetchAll(
 );
 
 $pageTitle = $product['name'];
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;">
@@ -182,4 +182,4 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

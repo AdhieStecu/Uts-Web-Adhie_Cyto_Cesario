@@ -1,7 +1,7 @@
 <?php
 // File: admin/index.php
 $pageTitle = 'Admin Dashboard';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireAdmin();
 
 // Stats

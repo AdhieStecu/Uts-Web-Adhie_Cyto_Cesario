@@ -1,7 +1,7 @@
 <?php
 // File: pages/categories.phpppp
 $pageTitle = 'Semua Kategori';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 
 // FIX: query tanpa alias yang ambigu
 $categories = db()->fetchAll(
@@ -15,7 +15,7 @@ $categories = db()->fetchAll(
      ORDER BY c.sort_order ASC"
 );
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="container" style="padding-top:40px;padding-bottom:60px;">
@@ -105,4 +105,4 @@ require_once __DIR__ . '/../includes/header.php';
 
 </div>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

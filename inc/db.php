@@ -1,7 +1,7 @@
 <?php
 // =============================================
 // DATABASE CONNECTION
-// File: includes/db.php
+// File: inc/db.php
 // =============================================
 
 require_once __DIR__ . '/config.php';
@@ -11,12 +11,12 @@ class Database {
     private $conn;
 
     private function __construct() {
-        $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
         if ($this->conn->connect_error) {
             die('<div style="background:#1a1a2e;color:#ff4757;padding:30px;font-family:monospace;text-align:center;">
                 <h2>Koneksi Database Gagal</h2>
                 <p>' . $this->conn->connect_error . '</p>
-                <small>Pastikan XAMPP MySQL sudah berjalan dan database gamestore_db sudah dibuat.</small>
+                <small>Pastikan database settings sudah benar dan server database online/aktif.</small>
             </div>');
         }
         $this->conn->set_charset('utf8mb4');

@@ -1,7 +1,7 @@
 <?php
 // File: pages/profile.php
 $pageTitle = 'Edit Profil';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../inc/functions.php';
 requireLogin();
 
 $user = currentUser();
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <!-- Cropper.js Dependencies -->
@@ -81,7 +81,7 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- SIDEBAR -->
         <?php
         $activePage = 'profile';
-        require_once __DIR__ . '/../includes/sidebar.php';
+        require_once __DIR__ . '/../inc/sidebar.php';
         ?>
 
         <!-- MAIN CONTENT -->
@@ -175,4 +175,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>
