@@ -1,13 +1,5 @@
-# Disable directory listing
-Options -Indexes
-
 # Protect sensitive files from being accessed directly via HTTP
 <FilesMatch "^\.env|^\.git|composer\.(json|lock)|gamestore_db\.sql">
-    <IfModule authz_core_module>
-        Require all denied
-    </IfModule>
-    <IfModule !authz_core_module>
-        Order allow,deny
-        Deny from all
-    </IfModule>
+    Order allow,deny
+    Deny from all
 </FilesMatch>

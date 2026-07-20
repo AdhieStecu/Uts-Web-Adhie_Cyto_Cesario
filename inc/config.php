@@ -45,10 +45,15 @@ define('DB_NAME', isset($_ENV['DB_NAME']) ? $_ENV['DB_NAME'] : 'if0_42451397_gam
 // App Config
 define('APP_NAME', isset($_ENV['APP_NAME']) ? $_ENV['APP_NAME'] : 'BoloTopup.ID');
 
-// Dynamic APP_URL detection
-$detectedUrl = 'http://localhost/Uts-Web-Adhie_Cyto_Cesario';
+// Dynamic APP_URL & Protocol Detection (HTTPS/HTTP & Reverse Proxy Compatible)
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+           || ($_SERVER['SERVER_PORT'] ?? 80) == 443
+           || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+           || (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on');
+
+$protocol = $isHttps ? "https://" : "http://";
+
 if (isset($_SERVER['HTTP_HOST'])) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? 80) == 443) ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'];
     $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
     $dir = str_replace('\\', '/', dirname($scriptName));
@@ -58,15 +63,36 @@ if (isset($_SERVER['HTTP_HOST'])) {
     // Remove folders like pages, admin, inc, assets, etc. to get the root directory path
     $dir = preg_replace('/(\/(pages|admin|inc|vendor|assets))(\/.*)?$/i', '', $dir);
     $detectedUrl = rtrim($protocol . $host . $dir, '/');
+} else {
+    $detectedUrl = 'http://localhost/Uts-Web-Adhie_Cyto_Cesario';
 }
 
-define('APP_URL', isset($_ENV['APP_URL']) && $_ENV['APP_URL'] !== '' ? $_ENV['APP_URL'] : $detectedUrl);
+$rawAppUrl = isset($_ENV['APP_URL']) && $_ENV['APP_URL'] !== '' ? $_ENV['APP_URL'] : $detectedUrl;
+
+// Automatically match HTTPS protocol if page requested over HTTPS to prevent mixed content CSS/JS block
+if ($isHttps && strpos($rawAppUrl, 'http://') === 0) {
+    $rawAppUrl = 'https://' . substr($rawAppUrl, 7);
+}
+
+define('APP_URL', rtrim($rawAppUrl, '/'));
 define('APP_VERSION', '1.0.0');
 
 // Google SSO Config
 define('GOOGLE_CLIENT_ID', isset($_ENV['GOOGLE_CLIENT_ID']) ? $_ENV['GOOGLE_CLIENT_ID'] : '');
 define('GOOGLE_CLIENT_SECRET', isset($_ENV['GOOGLE_CLIENT_SECRET']) ? $_ENV['GOOGLE_CLIENT_SECRET'] : '');
-define('GOOGLE_REDIRECT_URI', isset($_ENV['GOOGLE_REDIRECT_URI']) ? $_ENV['GOOGLE_REDIRECT_URI'] : (APP_URL . '/pages/google-callback.php'));
+
+$googleRedirectUri = isset($_ENV['GOOGLE_REDIRECT_URI']) && !empty($_ENV['GOOGLE_REDIRECT_URI'])
+    ? $_ENV['GOOGLE_REDIRECT_URI']
+    : (APP_URL . '/pages/google-callback.php');
+
+// Dynamically sync protocol (HTTP vs HTTPS) with current request
+if ($isHttps && strpos($googleRedirectUri, 'http://') === 0) {
+    $googleRedirectUri = 'https://' . substr($googleRedirectUri, 7);
+} elseif (!$isHttps && strpos($googleRedirectUri, 'https://') === 0) {
+    $googleRedirectUri = 'http://' . substr($googleRedirectUri, 8);
+}
+
+define('GOOGLE_REDIRECT_URI', $googleRedirectUri);
 
 // SMTP Config
 define('SMTP_HOST', isset($_ENV['SMTP_HOST']) ? $_ENV['SMTP_HOST'] : 'smtp.gmail.com');
